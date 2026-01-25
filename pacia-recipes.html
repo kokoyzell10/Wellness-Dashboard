@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pacia – Recipes</title>
+
+  <style>
+    :root{
+      /* Pacia premium theme */
+      --bg0:#070606;
+      --bg1:#0e0b0a;
+      --card:#141111cc;
+      --card2:#171312cc;
+      --stroke:rgba(255,255,255,.10);
+      --soft:rgba(255,255,255,.06);
+
+      --text:#f6f1ee;
+      --muted:rgba(246,241,238,.70);
+      --muted2:rgba(246,241,238,.50);
+
+      --choc:#5a3226;
+      --choc2:#7a4634;
+
+      --good:#59d38c;
+      --warn:#ffcf6b;
+
+      --r:26px;
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --shadow2: 0 14px 40px rgba(0,0,0,.55);
+
+      --inputBg: rgba(255,255,255,.06);
+      --inputStroke: rgba(255,255,255,.14);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 50% 10%, rgba(122,70,52,.22), transparent 60%),
+        radial-gradient(900px 600px at 20% 40%, rgba(90,50,38,.20), transparent 62%),
+        radial-gradient(900px 600px at 80% 50%, rgba(90,50,38,.18), transparent 64%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      overflow-x:hidden;
+    }
+
+    /* subtle animated stars */
+    .stars, .stars::before, .stars::after{
+      position:fixed; inset:0;
+      content:"";
+      pointer-events:none;
+      z-index:0;
+      background-repeat:repeat;
+      opacity:.22;
+      mix-blend-mode:screen;
+      filter: blur(.2px);
+      transform: translateZ(0);
+    }
+    .stars{
+      background-image:
+        radial-gradient(1px 1px at 10px 10px, rgba(255,255,255,.8) 50%, transparent 60%),
+        radial-gradient(1px 1px at 40px 30px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 90px 70px, rgba(255,255,255,.45) 50%, transparent 60%),
+        radial-gradient(1px 1px at 140px 120px, rgba(255,255,255,.6) 50%, transparent 60%);
+      background-size: 180px 180px;
+      animation: drift1 18s linear infinite;
+      opacity:.14;
+    }
+    .stars::before{
+      background-image:
+        radial-gradient(1px 1px at 30px 60px, rgba(255,255,255,.65) 50%, transparent 60%),
+        radial-gradient(1px 1px at 120px 20px, rgba(255,255,255,.4) 50%, transparent 60%),
+        radial-gradient(1px 1px at 70px 140px, rgba(255,255,255,.5) 50%, transparent 60%);
+      background-size: 220px 220px;
+      animation: drift2 26s linear infinite;
+      opacity:.16;
+    }
+    .stars::after{
+      background-image:
+        radial-gradient(1px 1px at 20px 120px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 160px 40px, rgba(255,255,255,.35) 50%, transparent 60%),
+        radial-gradient(1px 1px at 110px 160px, rgba(255,255,255,.45) 50%, transparent 60%);
+      background-size: 260px 260px;
+      animation: drift3 34s linear infinite;
+      opacity:.11;
+    }
+    @keyframes drift1{ from{background-position:0 0} to{background-position:180px 360px} }
+    @keyframes drift2{ from{background-position:0 0} to{background-position:-320px 240px} }
+    @keyframes drift3{ from{background-position:0 0} to{background-position:260px -420px} }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 44px 18px 90px;
+    }
+
+    header{
+      text-align:center;
+      margin-bottom: 22px;
+      position:relative;
+    }
+    h1{
+      margin:0;
+      letter-spacing:.3px;
+      font-size: clamp(34px, 5vw, 54px);
+      font-weight: 900;
+    }
+    .sub{
+      margin: 10px 0 0;
+      color:var(--muted);
+      font-size: 16px;
+      font-weight:800;
+    }
+
+    .topTools{
+      position:absolute;
+      right:0;
+      top: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    @media (max-width: 900px){
+      .topTools{ position:static; margin-top:16px; justify-content:center; }
+    }
+
+    .pillBtn{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      display:flex; gap:8px; align-items:center;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      font-weight:900;
+      text-decoration:none;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
+    .pillBtn:active{ transform: translateY(0px) scale(.99); }
+    .pillBtn .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--choc);
+      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 16px;
+      align-items:start;
+      margin-top: 16px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .sectionTitle{
+      font-size: 28px;
+      font-weight: 950;
+      margin: 0 0 12px;
+      letter-spacing:.2px;
+    }
+    .miniTitle{
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    label{
+      display:block;
+      color: var(--muted);
+      font-weight: 900;
+      margin: 12px 0 8px;
+      font-size: 13px;
+      letter-spacing:.2px;
+      text-transform: uppercase;
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid var(--inputStroke);
+      background: var(--inputBg);
+      color: var(--text);
+      outline:none;
+      font-size: 15px;
+      font-weight: 850;
+      transition: border-color .12s ease, background .12s ease, transform .12s ease;
+    }
+    textarea{ resize: vertical; min-height: 92px; }
+    input::placeholder, textarea::placeholder{ color: rgba(246,241,238,.40); }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.08);
+    }
+
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px){ .row2{ grid-template-columns: 1fr; } }
+
+    .btnRow{ display:flex; gap: 10px; margin-top: 14px; justify-content:flex-end; flex-wrap:wrap; }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 950;
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.30); }
+    .btn:active{ transform: translateY(0px) scale(.99); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--choc2), var(--choc));
+      border-color: rgba(255,255,255,.18);
+      color:#fff;
+      box-shadow: 0 18px 34px rgba(122,70,52,.22);
+    }
+    .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
+    .btn.danger{
+      background: rgba(255,107,107,.12);
+      color: #ffd9d9;
+    }
+    .btn.danger:hover{ background: rgba(255,107,107,.18); }
+
+    .panelInner{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .hint{
+      color: var(--muted2);
+      font-weight: 850;
+      font-size: 12px;
+      margin-top: 10px;
+      line-height:1.35;
+    }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(90,50,38,.25);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+
+    /* ingredient rows */
+    .ingredientRow{
+      display:grid;
+      grid-template-columns: 1.6fr .7fr .9fr auto;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 10px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      margin-top: 10px;
+    }
+    @media (max-width: 820px){
+      .ingredientRow{
+        grid-template-columns: 1fr 1fr;
+        grid-auto-rows: auto;
+      }
+      .ingredientRow .kill{ grid-column: 2; justify-self:end; }
+    }
+    .kill{
+      border:none;
+      background: transparent;
+      color: rgba(255,255,255,.75);
+      font-weight: 950;
+      cursor:pointer;
+      padding: 10px;
+      border-radius: 12px;
+      transition: background .12s ease, transform .12s ease;
+    }
+    .kill:hover{ background: rgba(255,255,255,.06); transform: translateY(-1px); }
+    .kill:active{ transform: translateY(0px) scale(.99); }
+
+    .summaryLine{
+      margin-top: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      font-weight: 950;
+    }
+    .summaryLine span:last-child{
+      background: rgba(122,70,52,.18);
+      border:1px solid rgba(255,255,255,.10);
+      padding: 8px 10px;
+      border-radius: 999px;
+      white-space:nowrap;
+    }
+
+    /* saved recipes */
+    .recipeCard{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: 18px;
+      padding: 14px;
+      margin-top: 12px;
+    }
+    .recipeTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+    }
+    .recipeName{
+      margin:0;
+      font-size: 18px;
+      font-weight: 950;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .recipeMeta{
+      margin-top: 6px;
+      color: var(--muted2);
+      font-weight: 850;
+      font-size: 12px;
+      line-height:1.35;
+    }
+    .kcalPill{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(90,50,38,.22);
+      font-weight: 950;
+      color: rgba(246,241,238,.95);
+      white-space:nowrap;
+    }
+    .recipeActions{
+      margin-top: 12px;
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    details{ margin-top: 10px; }
+    summary{
+      cursor:pointer;
+      color: rgba(246,241,238,.85);
+      font-weight: 900;
+      user-select:none;
+    }
+    summary:hover{ text-decoration: underline; }
+
+    /* modal + toast */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.60);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 60;
+    }
+    .overlay.show{ display:flex; }
+    .modal{
+      width: min(720px, 100%);
+      background: linear-gradient(180deg, rgba(18,14,13,.98), rgba(12,10,10,.98));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .modalTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .modalTop h3{ margin:0; font-size: 20px; font-weight: 950; }
+    .x{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+    .help{
+      color: var(--muted);
+      font-weight: 850;
+      font-size: 13px;
+      line-height:1.35;
+      margin-top: 6px;
+    }
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(10,8,8,.85);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow2);
+      color: var(--text);
+      font-weight: 950;
+      display:none;
+      z-index: 80;
+      backdrop-filter: blur(10px);
+      text-align:center;
+      max-width: min(560px, calc(100vw - 36px));
+    }
+    .toast.show{ display:block; animation: pop .20s ease; }
+    @keyframes pop{ from{ transform: translateX(-50%) translateY(8px); opacity:0 } to{ transform: translateX(-50%) translateY(0); opacity:1 } }
+
+    footer{
+      margin-top: 22px;
+      color: var(--muted2);
+      text-align:center;
+      font-weight: 850;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stars"></div>
+
+  <div class="wrap">
+    <header>
+      <h1>Pacia’s Recipes</h1>
+      <p class="sub">Build recipes once — then log servings in one click</p>
+
+      <div class="topTools">
+        <a class="pillBtn" href="pacia-dashboard.html" title="Back to dashboard"><span class="dot"></span> Back</a>
+        <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
+        <button class="pillBtn" id="btnExport" type="button" title="Export recipes JSON"><span class="dot"></span> Export</button>
+        <button class="pillBtn" id="btnImport" type="button" title="Import recipes JSON"><span class="dot"></span> Import</button>
+        <input id="importFile" type="file" accept="application/json" style="display:none">
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: create/edit recipe -->
+      <div class="card">
+        <div class="sectionTitle" id="editorTitle">Create Recipe</div>
+
+        <label for="recipeName">Recipe Name</label>
+        <input id="recipeName" placeholder="e.g. Protein oats"/>
+
+        <div class="row2">
+          <div>
+            <label for="servings">Servings (recipe makes)</label>
+            <input id="servings" type="number" min="1" step="1" value="5"/>
+          </div>
+          <div>
+            <label for="recipeNotes">Notes (optional)</label>
+            <input id="recipeNotes" placeholder="e.g. 2 mins microwave"/>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="panelInner">
+          <div class="miniTitle">Ingredients</div>
+          <div id="ingredients"></div>
+
+          <div class="btnRow" style="justify-content:flex-start; margin-top:12px">
+            <button class="btn" id="btnAddIngredient" type="button">+ Add Ingredient</button>
+          </div>
+
+          <div class="summaryLine">
+            <span>Total Calories</span>
+            <span id="totalCalories">0 kcal</span>
+          </div>
+          <div class="summaryLine">
+            <span>Per Serving</span>
+            <span id="perServing">0 kcal</span>
+          </div>
+
+          <div class="hint">
+            Tip: In “Calories”, enter calories for <b>one unit</b> of the ingredient. Total = Qty × Calories.
+          </div>
+        </div>
+
+        <div class="btnRow">
+          <button class="btn" id="btnReset" type="button">Reset</button>
+          <button class="btn primary" id="btnSave" type="button">Save Recipe</button>
+        </div>
+
+        <div class="hint">
+          Storage keys: <span class="chip">paciaRecipes</span> for recipes, and logging uses <span class="chip">paciaMeals</span>.
+        </div>
+      </div>
+
+      <!-- RIGHT: saved recipes -->
+      <div class="card">
+        <div class="sectionTitle">Saved Recipes</div>
+
+        <div class="row2">
+          <div>
+            <label for="search">Search</label>
+            <input id="search" placeholder="Type to filter recipes..."/>
+          </div>
+          <div>
+            <label for="sort">Sort</label>
+            <select id="sort">
+              <option value="recent">Most recent</option>
+              <option value="name">Name (A–Z)</option>
+              <option value="kcal">Per serving (high→low)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="height:10px"></div>
+
+        <div class="panelInner">
+          <div id="recipeList"></div>
+          <div class="hint" id="emptyHint" style="display:none">No recipes yet — create your first one on the left.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Pacia • Local & Private • Works offline in your browser</footer>
+  </div>
+
+  <!-- Add to Log modal -->
+  <div class="overlay" id="addOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+      <div class="modalTop">
+        <div>
+          <h3 id="addTitle">Add Recipe to Log</h3>
+          <div class="help">This writes into <b>paciaMeals</b> so the dashboard & food log stay consistent.</div>
+        </div>
+        <button class="x" type="button" data-close="addOverlay">✕</button>
+      </div>
+
+      <div class="panelInner">
+        <div class="miniTitle" id="addRecipeName">Recipe</div>
+
+        <div class="row2">
+          <div>
+            <label for="addDate">Date</label>
+            <input id="addDate" type="date"/>
+          </div>
+          <div>
+            <label for="addMealType">Meal Type</label>
+            <select id="addMealType">
+              <option>Breakfast</option>
+              <option>Lunch</option>
+              <option>Dinner</option>
+              <option>Snack</option>
+              <option>Recipe</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label for="addServings">Servings to add</label>
+            <input id="addServings" type="number" min="0.25" step="0.25" value="1"/>
+          </div>
+          <div>
+            <label for="addNotes">Notes</label>
+            <input id="addNotes" placeholder="Optional note..."/>
+          </div>
+        </div>
+
+        <div class="summaryLine">
+          <span>Calories added</span>
+          <span id="addKcal">0 kcal</span>
+        </div>
+
+        <div class="hint">
+          Logged item uses: qty = servings, calories = per-serving kcal.
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn" type="button" data-close="addOverlay">Cancel</button>
+        <button class="btn primary" id="btnConfirmAdd" type="button">Add to Log</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ----------------------------
+   Keys (verified for dashboard compatibility)
+---------------------------- */
+const KEYS = {
+  RECIPES: "paciaRecipes",
+  RECIPES_LEGACY: "pacia-recipes",  // legacy from older file
+  MEALS: "paciaMeals"               // used by food log + dashboard
+};
+
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+
+function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
+function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+function uid(){ return (crypto?.randomUUID?.() || ("r_"+Math.random().toString(16).slice(2)+"_"+Date.now())); }
+function n(x){ const v = Number(x); return Number.isFinite(v) ? v : 0; }
+function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+/* ----------------------------
+   Migration: legacy -> new key
+---------------------------- */
+function readRecipesRaw(){
+  const modern = safeParse(localStorage.getItem(KEYS.RECIPES) || "[]", []);
+  if (Array.isArray(modern) && modern.length) return modern;
+
+  const legacy = safeParse(localStorage.getItem(KEYS.RECIPES_LEGACY) || "[]", []);
+  if (Array.isArray(legacy) && legacy.length){
+    // normalize legacy shape then persist to modern
+    const migrated = legacy.map(r => normalizeLegacyRecipe(r));
+    localStorage.setItem(KEYS.RECIPES, JSON.stringify(migrated));
+    return migrated;
+  }
+  return [];
+}
+
+function writeRecipes(list){
+  localStorage.setItem(KEYS.RECIPES, JSON.stringify(list));
+}
+
+/* legacy from old file:
+  { name, servings, ingredients, total: "123", perServing: "25" }
+*/
+function normalizeLegacyRecipe(r){
+  const servings = Math.max(1, Math.round(n(r?.servings || 1)));
+  const ingredients = Array.isArray(r?.ingredients) ? r.ingredients.map(it => ({
+    name: String(it?.name || "").trim(),
+    qty: n(it?.qty || 0),
+    cal: n(it?.cal || 0)
+  })) : [];
+  const totalKcal = Math.round(n(r?.total || 0) || ingredients.reduce((a,it)=> a + (n(it.qty)*n(it.cal)), 0));
+  const perServing = Math.round(n(r?.perServing || 0) || (servings ? totalKcal/servings : 0));
+
+  return {
+    id: r?.id || uid(),
+    name: String(r?.name || "Recipe").trim(),
+    servings,
+    ingredients,
+    totalKcal,
+    perServing,
+    notes: String(r?.notes || "").trim(),
+    createdAt: r?.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+/* ----------------------------
+   Editor state
+---------------------------- */
+let editId = null;
+let ingredients = []; // {name, qty, cal}
+
+function addIngredientRow(name="", qty=1, cal=0){
+  ingredients.push({ name, qty, cal });
+  renderIngredients();
+}
+
+function renderIngredients(){
+  const host = $("#ingredients");
+  host.innerHTML = "";
+
+  if(!ingredients.length){
+    host.innerHTML = `<div class="hint">No ingredients yet — add one.</div>`;
+    calc();
+    return;
+  }
+
+  ingredients.forEach((it, idx) => {
+    const row = document.createElement("div");
+    row.className = "ingredientRow";
+    row.innerHTML = `
+      <input placeholder="Ingredient" value="${escapeHtml(it.name)}" data-k="name" data-i="${idx}">
+      <input type="number" min="0" step="0.25" placeholder="Qty" value="${escapeHtml(it.qty)}" data-k="qty" data-i="${idx}">
+      <input type="number" min="0" step="1" placeholder="Calories" value="${escapeHtml(it.cal)}" data-k="cal" data-i="${idx}">
+      <button class="kill" type="button" title="Remove" data-del="${idx}">✕</button>
+    `;
+    host.appendChild(row);
+  });
+
+  calc();
+}
+
+$("#ingredients").addEventListener("input", (e)=>{
+  const inp = e.target.closest("input[data-i]");
+  if(!inp) return;
+  const i = Number(inp.dataset.i);
+  const k = inp.dataset.k;
+  if(!ingredients[i]) return;
+
+  if(k === "name") ingredients[i].name = inp.value;
+  if(k === "qty") ingredients[i].qty = round2(n(inp.value));
+  if(k === "cal") ingredients[i].cal = round2(n(inp.value));
+
+  calc();
+});
+
+$("#ingredients").addEventListener("click", (e)=>{
+  const btn = e.target.closest("button[data-del]");
+  if(!btn) return;
+  const idx = Number(btn.dataset.del);
+  ingredients.splice(idx, 1);
+  renderIngredients();
+});
+
+function calc(){
+  const total = ingredients.reduce((sum, it) => sum + (n(it.qty) * n(it.cal)), 0);
+  const servings = Math.max(1, Math.round(n($("#servings").value || 1)));
+  const per = servings ? total/servings : 0;
+
+  $("#totalCalories").textContent = `${Math.round(total)} kcal`;
+  $("#perServing").textContent = `${Math.round(per)} kcal`;
+}
+
+$("#servings").addEventListener("input", calc);
+
+/* ----------------------------
+   Save / Update / Reset
+---------------------------- */
+function resetEditor(){
+  editId = null;
+  $("#editorTitle").textContent = "Create Recipe";
+  $("#recipeName").value = "";
+  $("#servings").value = 5;
+  $("#recipeNotes").value = "";
+  ingredients = [];
+  addIngredientRow("", 1, 0);
+  calc();
+}
+
+function validateEditor(){
+  const name = $("#recipeName").value.trim();
+  if(!name) return { ok:false, msg:"Recipe name required." };
+
+  const servings = Math.max(1, Math.round(n($("#servings").value || 1)));
+  const cleanIngredients = ingredients
+    .map(it => ({ name: String(it.name||"").trim(), qty: n(it.qty), cal: n(it.cal) }))
+    .filter(it => it.name && it.qty > 0 && it.cal >= 0);
+
+  if(!cleanIngredients.length) return { ok:false, msg:"Add at least one ingredient with qty + calories." };
+
+  const totalKcal = Math.round(cleanIngredients.reduce((sum,it)=> sum + (it.qty * it.cal), 0));
+  const perServing = Math.round(totalKcal / servings);
+
+  return {
+    ok:true,
+    recipe: {
+      id: editId || uid(),
+      name,
+      servings,
+      ingredients: cleanIngredients,
+      totalKcal,
+      perServing,
+      notes: $("#recipeNotes").value.trim(),
+      updatedAt: new Date().toISOString()
+    }
+  };
+}
+
+function saveRecipe(){
+  const v = validateEditor();
+  if(!v.ok){ alert(v.msg); return; }
+
+  const list = readRecipesRaw();
+  const now = new Date().toISOString();
+
+  const idx = list.findIndex(r => String(r.id) === String(v.recipe.id));
+  if(idx >= 0){
+    list[idx] = { ...list[idx], ...v.recipe, createdAt: list[idx].createdAt || now };
+    toast("Recipe updated ✅");
+  } else {
+    list.unshift({ ...v.recipe, createdAt: now });
+    toast("Recipe saved ✅");
+  }
+
+  writeRecipes(list);
+  renderRecipeList();
+  resetEditor();
+}
+
+/* ----------------------------
+   Saved recipes list
+---------------------------- */
+function sortRecipes(list){
+  const mode = $("#sort").value;
+  if(mode === "name"){
+    return [...list].sort((a,b)=> String(a.name).localeCompare(String(b.name)));
+  }
+  if(mode === "kcal"){
+    return [...list].sort((a,b)=> n(b.perServing) - n(a.perServing));
+  }
+  // recent
+  return [...list].sort((a,b)=> String(b.updatedAt||b.createdAt||"").localeCompare(String(a.updatedAt||a.createdAt||"")));
+}
+
+function renderRecipeList(){
+  const q = $("#search").value.trim().toLowerCase();
+  const host = $("#recipeList");
+  const list = sortRecipes(readRecipesRaw())
+    .filter(r => !q || String(r.name||"").toLowerCase().includes(q));
+
+  $("#emptyHint").style.display = list.length ? "none" : "block";
+  host.innerHTML = "";
+
+  list.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "recipeCard";
+    const created = (r.createdAt || "").slice(0,10);
+    const updated = (r.updatedAt || "").slice(0,10);
+
+    card.innerHTML = `
+      <div class="recipeTop">
+        <div style="min-width:0">
+          <h3 class="recipeName" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</h3>
+          <div class="recipeMeta">
+            ${escapeHtml(r.servings)} servings • ${escapeHtml(r.ingredients?.length||0)} ingredients
+            ${created ? ` • created ${escapeHtml(created)}` : ``}
+            ${updated ? ` • updated ${escapeHtml(updated)}` : ``}
+            ${r.notes ? `<br><b>Notes:</b> ${escapeHtml(r.notes)}` : ``}
+          </div>
+        </div>
+        <div class="kcalPill">${Math.round(n(r.perServing))} kcal/serv</div>
+      </div>
+
+      <details>
+        <summary>View ingredients</summary>
+        <div class="panelInner" style="margin-top:10px">
+          ${(r.ingredients||[]).map(it => {
+            const lineTotal = Math.round(n(it.qty) * n(it.cal));
+            return `<div class="summaryLine" style="margin-top:10px">
+              <span>${escapeHtml(it.qty)} × ${escapeHtml(it.name)} (${escapeHtml(Math.round(n(it.cal)))} kcal)</span>
+              <span>${escapeHtml(lineTotal)} kcal</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </details>
+
+      <div class="recipeActions">
+        <button class="btn" type="button" data-edit="${escapeHtml(r.id)}">Edit</button>
+        <button class="btn primary" type="button" data-add="${escapeHtml(r.id)}">Add to Log</button>
+        <button class="btn danger" type="button" data-del="${escapeHtml(r.id)}">Delete</button>
+      </div>
+    `;
+    host.appendChild(card);
+  });
+}
+
+$("#recipeList").addEventListener("click", (e)=>{
+  const edit = e.target.closest("button[data-edit]");
+  const del  = e.target.closest("button[data-del]");
+  const add  = e.target.closest("button[data-add]");
+
+  const list = readRecipesRaw();
+
+  if(edit){
+    const id = edit.dataset.edit;
+    const r = list.find(x => String(x.id) === String(id));
+    if(!r) return;
+
+    editId = r.id;
+    $("#editorTitle").textContent = "Edit Recipe";
+    $("#recipeName").value = r.name || "";
+    $("#servings").value = Math.max(1, Math.round(n(r.servings || 1)));
+    $("#recipeNotes").value = r.notes || "";
+    ingredients = (r.ingredients || []).map(it => ({ name: it.name, qty: n(it.qty), cal: n(it.cal) }));
+    if(!ingredients.length) ingredients = [{name:"",qty:1,cal:0}];
+    renderIngredients();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    toast("Editing recipe…");
+    return;
+  }
+
+  if(del){
+    const id = del.dataset.del;
+    const r = list.find(x => String(x.id) === String(id));
+    if(!r) return;
+    if(!confirm(`Delete "${r.name}"?`)) return;
+    const next = list.filter(x => String(x.id) !== String(id));
+    writeRecipes(next);
+    renderRecipeList();
+    toast("Deleted.");
+    return;
+  }
+
+  if(add){
+    const id = add.dataset.add;
+    const r = list.find(x => String(x.id) === String(id));
+    if(!r) return;
+    openAddModal(r);
+    return;
+  }
+});
+
+$("#search").addEventListener("input", renderRecipeList);
+$("#sort").addEventListener("change", renderRecipeList);
+
+/* ----------------------------
+   Add to Log (paciaMeals)
+---------------------------- */
+let addRecipe = null;
+
+function readMeals(){
+  const meals = safeParse(localStorage.getItem(KEYS.MEALS) || "[]", []);
+  return Array.isArray(meals) ? meals : [];
+}
+function writeMeals(meals){
+  localStorage.setItem(KEYS.MEALS, JSON.stringify(meals));
+}
+
+function openOverlay(id){
+  const ov = $("#"+id);
+  ov.classList.add("show");
+  ov.setAttribute("aria-hidden","false");
+}
+function closeOverlay(id){
+  const ov = $("#"+id);
+  ov.classList.remove("show");
+  ov.setAttribute("aria-hidden","true");
+}
+
+document.addEventListener("click", (e)=>{
+  const t = e.target;
+  if(t?.dataset?.close) closeOverlay(t.dataset.close);
+});
+$$(".overlay").forEach(ov=>{
+  ov.addEventListener("click",(e)=>{ if(e.target === ov) closeOverlay(ov.id); });
+});
+
+function openAddModal(r){
+  addRecipe = r;
+  $("#addRecipeName").textContent = r.name;
+  $("#addDate").value = todayISO();
+  $("#addMealType").value = "Recipe";
+  $("#addServings").value = 1;
+  $("#addNotes").value = "From saved recipe";
+  updateAddKcal();
+  openOverlay("addOverlay");
+}
+
+function updateAddKcal(){
+  if(!addRecipe) return;
+  const servingsToAdd = Math.max(0, n($("#addServings").value || 0));
+  const kcal = Math.round(servingsToAdd * n(addRecipe.perServing));
+  $("#addKcal").textContent = `${kcal} kcal`;
+}
+
+$("#addServings").addEventListener("input", updateAddKcal);
+
+$("#btnConfirmAdd").addEventListener("click", ()=>{
+  if(!addRecipe) return;
+
+  const dateISO = ($("#addDate").value || todayISO()).slice(0,10);
+  const mealType = $("#addMealType").value || "Recipe";
+  const servingsToAdd = Math.max(0.25, n($("#addServings").value || 1));
+  const perServing = Math.round(n(addRecipe.perServing));
+  const totalKcal = Math.round(servingsToAdd * perServing);
+
+  const note = ($("#addNotes").value || "").trim();
+
+  // IMPORTANT: compatible meal shape (same as pacia-food.html)
+  const meal = {
+    id: uid(),
+    date: dateISO,
+    mealType,
+    items: [
+      {
+        name: addRecipe.name,
+        qty: round2(servingsToAdd),
+        calories: perServing   // calories PER SERVING, dashboard multiplies qty*calories
+      }
+    ],
+    totalKcal,
+    notes: note ? note : `From recipe: ${addRecipe.name}`,
+    recipeId: addRecipe.id
+  };
+
+  const meals = readMeals();
+  meals.push(meal);
+  writeMeals(meals);
+
+  closeOverlay("addOverlay");
+  toast("Added to log ✅");
+});
+
+/* ----------------------------
+   Export / Import recipes
+---------------------------- */
+function downloadJson(filename, obj){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+$("#btnExport").addEventListener("click", ()=>{
+  const data = readRecipesRaw();
+  downloadJson(`pacia-recipes-${todayISO()}.json`, data);
+  toast("Exported ✅");
+});
+
+$("#btnImport").addEventListener("click", ()=> $("#importFile").click());
+
+$("#importFile").addEventListener("change", async ()=>{
+  const file = $("#importFile").files?.[0];
+  if(!file) return;
+  try{
+    const txt = await file.text();
+    const incoming = safeParse(txt, null);
+    if(!Array.isArray(incoming)) throw new Error("Invalid file");
+
+    const normalized = incoming.map(r => ({
+      id: r.id || uid(),
+      name: String(r.name||"Recipe").trim(),
+      servings: Math.max(1, Math.round(n(r.servings||1))),
+      ingredients: Array.isArray(r.ingredients) ? r.ingredients.map(it => ({
+        name: String(it.name||"").trim(),
+        qty: n(it.qty||0),
+        cal: n(it.cal||0)
+      })).filter(it => it.name && it.qty>0) : [],
+      totalKcal: Math.round(n(r.totalKcal || 0)),
+      perServing: Math.round(n(r.perServing || 0)),
+      notes: String(r.notes||"").trim(),
+      createdAt: r.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
+
+    // merge by id
+    const current = readRecipesRaw();
+    const map = new Map(current.map(r => [String(r.id), r]));
+    normalized.forEach(r => map.set(String(r.id), r));
+    writeRecipes(Array.from(map.values()));
+
+    renderRecipeList();
+    toast("Imported ✅");
+  }catch(err){
+    alert("Import failed. Please choose a valid Pacia recipes JSON file.");
+  }finally{
+    $("#importFile").value = "";
+  }
+});
+
+/* ----------------------------
+   Init
+---------------------------- */
+$("#btnAddIngredient").addEventListener("click", ()=> addIngredientRow("", 1, 0));
+$("#btnReset").addEventListener("click", resetEditor);
+$("#btnSave").addEventListener("click", saveRecipe);
+
+// Start
+(function init(){
+  // Ensure at least one row in editor
+  resetEditor();
+  // Render list
+  renderRecipeList();
+})();
+</script>
+</body>
+</html>

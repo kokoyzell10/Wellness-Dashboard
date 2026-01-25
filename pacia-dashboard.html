@@ -1,0 +1,1359 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pacia’s Wellness</title>
+  <style>
+    :root{
+      /* Chocolate theme (deep + readable) */
+      --bg0:#070606;
+      --bg1:#0e0b0a;
+      --card:#141111cc;
+      --card2:#171312cc;
+      --stroke:rgba(255,255,255,.10);
+      --soft:rgba(255,255,255,.06);
+      --text:#f6f1ee;
+      --muted:rgba(246,241,238,.70);
+      --muted2:rgba(246,241,238,.50);
+
+      --choc:#5a3226;        /* primary chocolate */
+      --choc2:#7a4634;       /* hover */
+      --chocGlow:rgba(122,70,52,.35);
+
+      --good:#59d38c;
+      --warn:#ffcf6b;
+      --bad:#ff6b6b;
+
+      --r:26px;
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --shadow2: 0 14px 40px rgba(0,0,0,.55);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 50% 10%, rgba(122,70,52,.22), transparent 60%),
+        radial-gradient(900px 600px at 20% 40%, rgba(90,50,38,.20), transparent 62%),
+        radial-gradient(900px 600px at 80% 50%, rgba(90,50,38,.18), transparent 64%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      overflow-x:hidden;
+    }
+
+    /* subtle animated stars (safe + lightweight) */
+    .stars, .stars::before, .stars::after{
+      position:fixed; inset:0;
+      content:"";
+      pointer-events:none;
+      z-index:0;
+      background-repeat:repeat;
+      opacity:.22;
+      mix-blend-mode:screen;
+      filter: blur(.2px);
+      transform: translateZ(0);
+    }
+    .stars{
+      background-image:
+        radial-gradient(1px 1px at 10px 10px, rgba(255,255,255,.8) 50%, transparent 60%),
+        radial-gradient(1px 1px at 40px 30px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 90px 70px, rgba(255,255,255,.45) 50%, transparent 60%),
+        radial-gradient(1px 1px at 140px 120px, rgba(255,255,255,.6) 50%, transparent 60%);
+      background-size: 180px 180px;
+      animation: drift1 18s linear infinite;
+      opacity:.16;
+    }
+    .stars::before{
+      background-image:
+        radial-gradient(1px 1px at 30px 60px, rgba(255,255,255,.65) 50%, transparent 60%),
+        radial-gradient(1px 1px at 120px 20px, rgba(255,255,255,.4) 50%, transparent 60%),
+        radial-gradient(1px 1px at 70px 140px, rgba(255,255,255,.5) 50%, transparent 60%);
+      background-size: 220px 220px;
+      animation: drift2 26s linear infinite;
+      opacity:.18;
+    }
+    .stars::after{
+      background-image:
+        radial-gradient(1px 1px at 20px 120px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 160px 40px, rgba(255,255,255,.35) 50%, transparent 60%),
+        radial-gradient(1px 1px at 110px 160px, rgba(255,255,255,.45) 50%, transparent 60%);
+      background-size: 260px 260px;
+      animation: drift3 34s linear infinite;
+      opacity:.12;
+    }
+    @keyframes drift1{ from{background-position:0 0} to{background-position:180px 360px} }
+    @keyframes drift2{ from{background-position:0 0} to{background-position:-320px 240px} }
+    @keyframes drift3{ from{background-position:0 0} to{background-position:260px -420px} }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 44px 18px 90px;
+    }
+
+    header{
+      text-align:center;
+      margin-bottom: 26px;
+      position:relative;
+    }
+    h1{
+      margin:0;
+      letter-spacing:.3px;
+      font-size: clamp(34px, 5vw, 58px);
+      font-weight: 800;
+    }
+    .sub{
+      margin: 10px 0 0;
+      color:var(--muted);
+      font-size: 18px;
+    }
+
+    .topTools{
+      position:absolute;
+      right:0;
+      top: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .pillBtn{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      display:flex; gap:8px; align-items:center;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      font-weight:700;
+    }
+    .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
+    .pillBtn .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--choc);
+      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .tabs{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 8px 0 18px;
+    }
+    .tab{
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 14px 12px;
+      text-align:center;
+      cursor:pointer;
+      font-weight: 800;
+      transition: background .12s ease, transform .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    .tab:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.18); }
+    .tab.active{
+      background: linear-gradient(180deg, rgba(90,50,38,.92), rgba(90,50,38,.72));
+      border-color: rgba(255,255,255,.20);
+      box-shadow: 0 12px 28px rgba(90,50,38,.28);
+    }
+
+    .rings{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      align-items:stretch;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px){
+      .rings{ grid-template-columns: 1fr; }
+      .topTools{ position:static; margin-top:16px; justify-content:center; }
+    }
+
+    .ringCard{
+      padding: 22px;
+      border-radius: 22px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 12px;
+      min-height: 280px;
+      position:relative;
+      overflow:hidden;
+    }
+    .ringTitle{
+      margin-top: 4px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+    .ringSub{
+      color:var(--muted);
+      margin-top:-6px;
+      font-weight: 700;
+    }
+    .ringGoal{
+      color: rgba(246,241,238,.85);
+      font-weight: 800;
+      margin-top: 2px;
+      opacity:.95;
+    }
+
+    .ringWrap{ width: 160px; height: 160px; position:relative; }
+    .ringSvg{ width:100%; height:100%; transform: rotate(-90deg); }
+    .ringBg{ stroke: rgba(255,255,255,.12); stroke-width: 14; fill:none; }
+    .ringFg{ stroke: var(--choc2); stroke-width: 14; fill:none; stroke-linecap: round; filter: drop-shadow(0 0 10px rgba(122,70,52,.25)); }
+    .ringNum{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 950;
+      font-size: 34px;
+      letter-spacing:.2px;
+      color: var(--text);
+      text-shadow: 0 10px 30px rgba(0,0,0,.6);
+    }
+    .ringNote{
+      font-size: 13px;
+      color: var(--muted2);
+      text-align:center;
+      max-width: 260px;
+      line-height:1.35;
+      margin-top: 2px;
+    }
+
+    .section{
+      margin-top: 22px;
+    }
+    .sectionTitle{
+      font-size: 30px;
+      font-weight: 950;
+      margin: 0 0 14px;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 1050px){
+      .actions{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px){
+      .actions{ grid-template-columns: 1fr; }
+    }
+
+    .action{
+      padding: 18px;
+      border-radius: 22px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      cursor:pointer;
+      text-decoration:none;
+      color:var(--text);
+      min-height: 112px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap: 8px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .action:hover{ transform: translateY(-2px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.28); }
+    .action h3{ margin:0; font-size: 20px; font-weight: 900; }
+    .action p{ margin:0; color:var(--muted); font-weight:700; }
+
+    .weekGrid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){ .weekGrid{ grid-template-columns: 1fr; } }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 520px){ .stats{ grid-template-columns: 1fr; } }
+
+    .stat{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .statLabel{ color: var(--muted); font-weight: 800; font-size: 13px; letter-spacing:.2px; text-transform: uppercase; }
+    .statValue{ margin-top: 6px; font-size: 22px; font-weight: 950; }
+    .statSmall{ margin-top: 4px; color: var(--muted2); font-weight: 700; font-size: 13px; }
+
+    .chartBox{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      overflow:hidden;
+    }
+    .chartHead{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .chartHead h4{ margin:0; font-size: 16px; font-weight: 950; }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(90,50,38,.25);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .chartSvg{ width:100%; height: 170px; display:block; }
+
+    /* modal */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.60);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .overlay.show{ display:flex; }
+    .modal{
+      width: min(560px, 100%);
+      background: linear-gradient(180deg, rgba(18,14,13,.98), rgba(12,10,10,.98));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .modalTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .modalTop h3{ margin:0; font-size: 20px; font-weight: 950; }
+    .x{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+
+    label{ display:block; color: var(--muted); font-weight: 800; margin: 12px 0 8px; }
+    input, select{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      outline:none;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    input::placeholder{ color: rgba(246,241,238,.40); }
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width:520px){ .row2{ grid-template-columns: 1fr; } }
+
+    .btnRow{ display:flex; gap: 10px; margin-top: 14px; justify-content:flex-end; flex-wrap:wrap; }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 950;
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.30); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--choc2), var(--choc));
+      border-color: rgba(255,255,255,.18);
+      color: #fff;
+      box-shadow: 0 18px 34px rgba(122,70,52,.22);
+    }
+    .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
+
+    /* toast + confetti */
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(10,8,8,.85);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow2);
+      color: var(--text);
+      font-weight: 900;
+      display:none;
+      z-index: 60;
+      backdrop-filter: blur(10px);
+    }
+    .toast.show{ display:block; animation: pop .20s ease; }
+    @keyframes pop{ from{ transform: translateX(-50%) translateY(8px); opacity:0 } to{ transform: translateX(-50%) translateY(0); opacity:1 } }
+
+    .confetti{
+      position:fixed; inset:0;
+      pointer-events:none;
+      z-index: 55;
+      overflow:hidden;
+      display:none;
+    }
+    .confetti.show{ display:block; }
+    .confetti i{
+      position:absolute;
+      top:-20px;
+      width:10px; height:16px;
+      border-radius: 4px;
+      opacity:.9;
+      animation: fall 1.4s linear forwards;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.35));
+    }
+    @keyframes fall{
+      to{
+        transform: translateY(calc(100vh + 40px)) rotate(220deg);
+        opacity:.95;
+      }
+    }
+
+    footer{
+      margin-top: 22px;
+      color: var(--muted2);
+      text-align:center;
+      font-weight: 800;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stars"></div>
+
+  <div class="wrap">
+    <header>
+      <h1>Pacia’s Wellness</h1>
+      <p class="sub">A calm space for balance, nourishment, and movement</p>
+
+      <div class="topTools">
+        <button class="pillBtn" id="btnWorkoutTop" type="button" title="Log workout days">
+          <span class="dot"></span> Log Workout Days
+        </button>
+        <button class="pillBtn" id="btnWaterTop" type="button" title="Log water (oz)">
+          <span class="dot"></span> Add Water
+        </button>
+      </div>
+    </header>
+
+    <div class="card" id="overviewCard">
+      <div class="tabs" role="tablist" aria-label="Time range">
+        <div class="tab active" data-view="day" role="tab" aria-selected="true">Today</div>
+        <div class="tab" data-view="week" role="tab" aria-selected="false">This Week</div>
+        <div class="tab" data-view="month" role="tab" aria-selected="false">This Month</div>
+      </div>
+
+      <div class="rings" id="ringsRow">
+        <div class="ringCard" id="ringCalories">
+          <div class="ringWrap">
+            <svg class="ringSvg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ringBg" cx="60" cy="60" r="46"></circle>
+              <circle class="ringFg" cx="60" cy="60" r="46" stroke-dasharray="289" stroke-dashoffset="289"></circle>
+            </svg>
+            <div class="ringNum" id="calVal">0</div>
+          </div>
+          <div class="ringTitle">Calories</div>
+          <div class="ringSub" id="calSub">Estimated intake</div>
+          <div class="ringGoal" id="calGoal">Goal 2500 kcal</div>
+        </div>
+
+        <div class="ringCard" id="ringMove">
+          <div class="ringWrap">
+            <svg class="ringSvg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ringBg" cx="60" cy="60" r="46"></circle>
+              <circle class="ringFg" cx="60" cy="60" r="46" stroke-dasharray="289" stroke-dashoffset="289"></circle>
+            </svg>
+            <div class="ringNum" id="movVal">0</div>
+          </div>
+          <div class="ringTitle">Movement</div>
+          <div class="ringSub" id="movSub">Workout days</div>
+          <div class="ringGoal" id="movGoal">Goal 4 Days</div>
+          <div class="ringNote" id="movNote">Tip: log workout days from the button at the top.</div>
+        </div>
+
+        <div class="ringCard" id="ringWater">
+          <div class="ringWrap">
+            <svg class="ringSvg" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ringBg" cx="60" cy="60" r="46"></circle>
+              <circle class="ringFg" cx="60" cy="60" r="46" stroke-dasharray="289" stroke-dashoffset="289"></circle>
+            </svg>
+            <div class="ringNum" id="watVal">0</div>
+          </div>
+          <div class="ringTitle">Water</div>
+          <div class="ringSub" id="watSub">Daily hydration</div>
+          <div class="ringGoal" id="watGoal">Goal 100 oz</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <div class="sectionTitle">Quick Actions</div>
+        <div class="actions">
+          <a class="action" href="pacia-food.html">
+            <h3>Log Food</h3>
+            <p>Meals and nourishment</p>
+          </a>
+          <a class="action" href="pacia-recipes.html">
+            <h3>Recipes</h3>
+            <p>Build meals you love</p>
+          </a>
+          <a class="action" href="pacia-exercise.html">
+            <h3>Exercises</h3>
+            <p>Moves + muscle groups</p>
+          </a>
+          <div class="action" role="button" tabindex="0" id="btnHistory">
+            <h3>History</h3>
+            <p>See your week/month breakdown</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="weekSection">
+      <div class="card">
+        <div class="sectionTitle" id="weekTitle">This Week</div>
+
+        <div class="weekGrid">
+          <div class="chartBox">
+            <div class="chartHead">
+              <h4 id="chartTitle">Daily calories</h4>
+              <div class="chip" id="rangeChip">7 days</div>
+            </div>
+            <svg class="chartSvg" id="calChart" viewBox="0 0 720 170" preserveAspectRatio="none" aria-label="Calories chart"></svg>
+          </div>
+
+          <div class="stats">
+            <div class="stat">
+              <div class="statLabel">Average per day</div>
+              <div class="statValue" id="avgCal">—</div>
+              <div class="statSmall" id="avgCalSub">Calories</div>
+            </div>
+            <div class="stat">
+              <div class="statLabel">Best day</div>
+              <div class="statValue" id="bestDay">—</div>
+              <div class="statSmall" id="bestDaySub">Most calories</div>
+            </div>
+            <div class="stat">
+              <div class="statLabel">Water average</div>
+              <div class="statValue" id="avgWat">—</div>
+              <div class="statSmall">oz/day</div>
+            </div>
+            <div class="stat">
+              <div class="statLabel">Workout days</div>
+              <div class="statValue" id="wkDays">—</div>
+              <div class="statSmall" id="wkDaysSub">This range</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+
+        <div class="chartBox">
+          <div class="chartHead">
+            <h4>Daily water</h4>
+            <div class="chip" id="waterChip">100 oz goal/day</div>
+          </div>
+          <svg class="chartSvg" id="watChart" viewBox="0 0 720 170" preserveAspectRatio="none" aria-label="Water chart"></svg>
+        </div>
+      </div>
+    </div>
+
+    <footer>Pacia • Local & Private • Works offline in your browser</footer>
+  </div>
+
+  <!-- Workout modal -->
+  <div class="overlay" id="workoutOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="workoutTitle">
+      <div class="modalTop">
+        <div>
+          <h3 id="workoutTitle">Log workout days</h3>
+          <div style="color:var(--muted);font-weight:800;margin-top:6px;font-size:13px">Pick any dates you worked out. You can add days later and they’ll count.</div>
+        </div>
+        <button class="x" type="button" data-close="workoutOverlay">✕</button>
+      </div>
+
+      <label for="workDate">Workout date</label>
+      <div class="row2">
+        <input id="workDate" type="date"/>
+        <button class="btn primary" id="addWorkDay" type="button">Add day</button>
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="chartBox" style="padding:12px">
+        <div class="chartHead" style="margin-bottom:8px">
+          <h4>Selected workout days</h4>
+          <div class="chip" id="workCountChip">0 days</div>
+        </div>
+        <div id="workDayList" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        <div style="color:var(--muted2);font-weight:800;font-size:12px;margin-top:10px">Tip: Click a date chip to remove it.</div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn" type="button" data-close="workoutOverlay">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Water modal -->
+  <div class="overlay" id="waterOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="waterTitle">
+      <div class="modalTop">
+        <div>
+          <h3 id="waterTitle">Add water</h3>
+          <div style="color:var(--muted);font-weight:800;margin-top:6px;font-size:13px">Log hydration in oz or cups (auto converts to oz).</div>
+        </div>
+        <button class="x" type="button" data-close="waterOverlay">✕</button>
+      </div>
+
+      <label for="waterDate">Date</label>
+      <input id="waterDate" type="date"/>
+
+      <div class="row2">
+        <div>
+          <label for="waterAmt">Amount</label>
+          <input id="waterAmt" type="number" min="0" step="0.5" placeholder="e.g. 16"/>
+        </div>
+        <div>
+          <label for="waterUnit">Unit</label>
+          <select id="waterUnit">
+            <option value="oz">oz</option>
+            <option value="cups">cups</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn" type="button" data-close="waterOverlay">Cancel</button>
+        <button class="btn primary" id="saveWater" type="button">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History modal -->
+  <div class="overlay" id="historyOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <div class="modalTop">
+        <div>
+          <h3 id="historyTitle">History</h3>
+          <div style="color:var(--muted);font-weight:800;margin-top:6px;font-size:13px">Quick view of saved totals.</div>
+        </div>
+        <button class="x" type="button" data-close="historyOverlay">✕</button>
+      </div>
+
+      <div class="chartBox">
+        <div class="chartHead">
+          <h4>Latest saved meals</h4>
+          <div class="chip" id="mealCountChip">0 meals</div>
+        </div>
+        <div id="mealList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="chartBox">
+        <div class="chartHead">
+          <h4>Workout days</h4>
+          <div class="chip" id="workDaysChip2">0 days</div>
+        </div>
+        <div id="workList2" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="chartBox">
+        <div class="chartHead">
+          <h4>Water logs</h4>
+          <div class="chip" id="waterCountChip2">0 logs</div>
+        </div>
+        <div id="waterList2" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn" type="button" data-close="historyOverlay">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <div class="confetti" id="confetti"></div>
+
+<script>
+/* ---------------------------
+   Shared local storage keys
+   (Dashboard reads multiple options to stay compatible with older file versions)
+---------------------------- */
+const STORAGE = {
+  mealsKeys: ["paciaMeals","pacia_meals","paciaFoodMeals","pacia_food_meals","pacia.meals","paciaMealsV1"],
+  workoutDaysKey: "paciaWorkoutDays",       // array of YYYY-MM-DD
+  waterLogsKey: "paciaWaterLogs"            // array of {date:'YYYY-MM-DD', oz:number}
+};
+
+const GOALS = {
+  caloriesPerDay: 2500,
+  waterOzPerDay: 100,
+  workoutsPerWeek: 4
+};
+
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+
+function todayISO(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+
+function safeParseJSON(str){
+  try { return JSON.parse(str); } catch { return null; }
+}
+
+function readMeals(){
+  for(const k of STORAGE.mealsKeys){
+    const raw = localStorage.getItem(k);
+    if(!raw) continue;
+    const val = safeParseJSON(raw);
+    if(Array.isArray(val)) return val;
+    // Sometimes stored as {meals:[...]}
+    if(val && Array.isArray(val.meals)) return val.meals;
+  }
+  return [];
+}
+
+function normalizeMeal(m){
+  // tries to map any meal object to a {date, totalKcal, mealType, items, notes}
+  const date =
+    (typeof m?.date === "string" && m.date.slice(0,10)) ||
+    (typeof m?.day === "string" && m.day.slice(0,10)) ||
+    (typeof m?.dateISO === "string" && m.dateISO.slice(0,10)) ||
+    (typeof m?.createdAt === "string" && m.createdAt.slice(0,10)) ||
+    (typeof m?.timestamp === "number" && new Date(m.timestamp).toISOString().slice(0,10)) ||
+    (typeof m?.ts === "number" && new Date(m.ts).toISOString().slice(0,10)) ||
+    todayISO();
+
+  let total =
+    (typeof m?.totalKcal === "number" && m.totalKcal) ||
+    (typeof m?.totalCalories === "number" && m.totalCalories) ||
+    (typeof m?.kcal === "number" && m.kcal) ||
+    (typeof m?.calories === "number" && m.calories) ||
+    0;
+
+  // If items exist, sum them
+  const items = Array.isArray(m?.items) ? m.items : (Array.isArray(m?.foods) ? m.foods : null);
+  if(items && items.length){
+    const sum = items.reduce((acc,it)=>{
+      const qty = Number(it?.qty ?? it?.quantity ?? 1) || 1;
+      const kcal = Number(it?.kcal ?? it?.calories ?? it?.cals ?? 0) || 0;
+      return acc + (qty * kcal);
+    },0);
+    if(sum > 0) total = sum;
+  }
+
+  const mealType = m?.mealType || m?.type || m?.meal || "Meal";
+  const notes = m?.notes || "";
+
+  return { date, totalKcal: Math.round(total), mealType, items, notes, raw: m };
+}
+
+function readWorkoutDays(){
+  const val = safeParseJSON(localStorage.getItem(STORAGE.workoutDaysKey) || "[]");
+  const arr = Array.isArray(val) ? val : [];
+  return Array.from(new Set(arr.filter(Boolean))).sort();
+}
+
+function saveWorkoutDays(days){
+  localStorage.setItem(STORAGE.workoutDaysKey, JSON.stringify(Array.from(new Set(days)).sort()));
+}
+
+function readWaterLogs(){
+  const val = safeParseJSON(localStorage.getItem(STORAGE.waterLogsKey) || "[]");
+  const arr = Array.isArray(val) ? val : [];
+  // normalize
+  return arr
+    .map(x=>{
+      const date = (x?.date || x?.day || todayISO()).slice(0,10);
+      const oz = Number(x?.oz ?? x?.amountOz ?? x?.waterOz ?? 0) || 0;
+      return {date, oz};
+    })
+    .filter(x=>x.oz > 0 && x.date);
+}
+
+function saveWaterLogs(logs){
+  localStorage.setItem(STORAGE.waterLogsKey, JSON.stringify(logs));
+}
+
+function startOfISOWeek(d){
+  // ISO week Monday start
+  const date = new Date(d);
+  const day = date.getDay(); // 0 Sun ... 6 Sat
+  const diff = (day === 0 ? -6 : 1) - day;
+  date.setDate(date.getDate() + diff);
+  date.setHours(0,0,0,0);
+  return date;
+}
+
+function rangeDays(view){
+  const t = new Date();
+  t.setHours(0,0,0,0);
+  if(view === "day"){
+    return [t];
+  }
+  if(view === "week"){
+    // last 7 days ending today (more intuitive)
+    const days = [];
+    for(let i=6;i>=0;i--){
+      const d = new Date(t);
+      d.setDate(d.getDate() - i);
+      days.push(d);
+    }
+    return days;
+  }
+  // month
+  const year = t.getFullYear(), month = t.getMonth();
+  const first = new Date(year, month, 1);
+  const last = new Date(year, month+1, 0);
+  const days = [];
+  for(let d=1; d<=last.getDate(); d++){
+    days.push(new Date(year, month, d));
+  }
+  return days;
+}
+
+function keyISO(d){ return d.toISOString().slice(0,10); }
+
+function sumMealsForDates(meals, datesSet){
+  let total = 0;
+  for(const m of meals){
+    const nm = normalizeMeal(m);
+    if(datesSet.has(nm.date)) total += (nm.totalKcal || 0);
+  }
+  return Math.round(total);
+}
+
+function mealsByDay(meals){
+  const map = new Map(); // date -> total
+  for(const m of meals){
+    const nm = normalizeMeal(m);
+    map.set(nm.date, (map.get(nm.date) || 0) + (nm.totalKcal || 0));
+  }
+  return map;
+}
+
+function waterByDay(logs){
+  const map = new Map();
+  for(const l of logs){
+    map.set(l.date, (map.get(l.date)||0) + (l.oz||0));
+  }
+  return map;
+}
+
+function workoutsInDates(days, datesSet){
+  return days.filter(d => datesSet.has(d));
+}
+
+/* ---------------------------
+   UI + rendering
+---------------------------- */
+let currentView = "day";
+
+function setTab(view){
+  currentView = view;
+  $$(".tab").forEach(t=>{
+    const on = t.dataset.view === view;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", on ? "true" : "false");
+  });
+  renderAll();
+}
+
+function ringSet(elId, value, goal){
+  const card = $(elId);
+  const fg = card.querySelector(".ringFg");
+  const numEl = card.querySelector(".ringNum");
+  const circumference = 289; // approx for r=46
+  const pct = goal > 0 ? Math.min(1, value/goal) : 0;
+  fg.style.strokeDasharray = circumference;
+  fg.style.strokeDashoffset = (circumference * (1 - pct)).toFixed(2);
+  numEl.textContent = String(value);
+
+  // color feedback
+  if(goal > 0){
+    const ratio = value/goal;
+    if(ratio >= 1){
+      fg.style.stroke = "var(--good)";
+    } else if(ratio >= 0.75){
+      fg.style.stroke = "var(--choc2)";
+    } else if(ratio >= 0.4){
+      fg.style.stroke = "var(--warn)";
+    } else {
+      fg.style.stroke = "rgba(255,255,255,.45)";
+    }
+  } else {
+    fg.style.stroke = "rgba(255,255,255,.25)";
+  }
+}
+
+function formatRangeTitle(view, days){
+  if(view === "day") return "Today";
+  if(view === "week") return "This Week";
+  const d0 = days[0], d1 = days[days.length-1];
+  const mo = d0.toLocaleString(undefined,{month:"long"});
+  return mo;
+}
+
+function svgBarChart(svgEl, days, valueMap, goalPerDay, color){
+  const W = 720, H = 170, pad = 22;
+  const n = days.length;
+  const maxVal = Math.max(goalPerDay || 0, ...days.map(d => valueMap.get(keyISO(d)) || 0), 1);
+  const innerW = W - pad*2;
+  const innerH = H - pad*2;
+  const gap = 6;
+  const barW = Math.max(6, (innerW - gap*(n-1)) / n);
+
+  const lines = [];
+  // baseline
+  lines.push(`<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="rgba(255,255,255,.10)" stroke-width="2"/>`);
+  // goal line (per-day)
+  if(goalPerDay > 0){
+    const gy = H - pad - (goalPerDay/maxVal)*innerH;
+    lines.push(`<line x1="${pad}" y1="${gy.toFixed(2)}" x2="${W-pad}" y2="${gy.toFixed(2)}" stroke="rgba(122,70,52,.55)" stroke-dasharray="6 8" stroke-width="2"/>`);
+  }
+
+  // bars + labels
+  days.forEach((d, i)=>{
+    const iso = keyISO(d);
+    const v = valueMap.get(iso) || 0;
+    const h = (v/maxVal)*innerH;
+    const x = pad + i*(barW+gap);
+    const y = H - pad - h;
+    const r = 10;
+
+    const fill = v >= goalPerDay ? "rgba(89,211,140,.85)" : (color || "rgba(122,70,52,.75)");
+    lines.push(`<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barW.toFixed(2)}" height="${Math.max(2,h).toFixed(2)}" rx="${r}" ry="${r}" fill="${fill}" opacity=".95"></rect>`);
+
+    // tiny day label
+    const lab = (n <= 7)
+      ? d.toLocaleString(undefined,{weekday:"short"}).slice(0,2)
+      : String(d.getDate());
+    lines.push(`<text x="${(x + barW/2).toFixed(2)}" y="${(H-6).toFixed(2)}" fill="rgba(246,241,238,.55)" font-size="12" font-weight="800" text-anchor="middle">${lab}</text>`);
+  });
+
+  svgEl.innerHTML = lines.join("");
+}
+
+function showToast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+function burstConfetti(){
+  const box = $("#confetti");
+  box.innerHTML = "";
+  const count = 36;
+  for(let i=0;i<count;i++){
+    const el = document.createElement("i");
+    const left = Math.random()*100;
+    const delay = Math.random()*0.25;
+    const dur = 1.1 + Math.random()*0.9;
+    const w = 8 + Math.random()*6;
+    const h = 12 + Math.random()*10;
+    const colors = ["#7a4634","#5a3226","#f6f1ee","#59d38c","#ffcf6b"];
+    el.style.left = left+"vw";
+    el.style.animationDelay = delay+"s";
+    el.style.animationDuration = dur+"s";
+    el.style.width = w+"px";
+    el.style.height = h+"px";
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    box.appendChild(el);
+  }
+  box.classList.add("show");
+  setTimeout(()=>box.classList.remove("show"), 1600);
+}
+
+let celebrated = new Set();
+function celebrateOnce(key, msg){
+  if(celebrated.has(key)) return;
+  celebrated.add(key);
+  showToast(msg);
+  burstConfetti();
+}
+
+/* ---------------------------
+   Render core dashboard
+---------------------------- */
+function renderAll(){
+  const mealsRaw = readMeals();
+  const meals = mealsRaw.map(normalizeMeal);
+  const waterLogs = readWaterLogs();
+  const workoutDays = readWorkoutDays();
+
+  const days = rangeDays(currentView);
+  const datesSet = new Set(days.map(keyISO));
+
+  const dayCount = days.length;
+
+  // Goals scale with time range (daily goals * number of days)
+  const calGoalTotal = GOALS.caloriesPerDay * dayCount;
+  const watGoalTotal = GOALS.waterOzPerDay * dayCount;
+
+  // Workouts goal: week = 4; month = scaled by weeks-in-range; day view = hide movement ring (per request)
+  let movGoal = 0;
+  if(currentView === "week"){
+    movGoal = GOALS.workoutsPerWeek;
+  } else if(currentView === "month"){
+    movGoal = Math.round((dayCount/7) * GOALS.workoutsPerWeek);
+    movGoal = Math.max(movGoal, GOALS.workoutsPerWeek); // never below 4
+  }
+
+  // Values
+  const calTotal = meals.reduce((acc,m)=> acc + (datesSet.has(m.date) ? m.totalKcal : 0), 0);
+  const waterMap = waterByDay(waterLogs);
+  const watTotal = Array.from(datesSet).reduce((acc,iso)=> acc + (waterMap.get(iso)||0), 0);
+  const movCount = workoutsInDates(workoutDays, datesSet).length;
+
+  // Update ring goals label + subtext
+  $("#calGoal").textContent = `Goal ${calGoalTotal} kcal`;
+  $("#watGoal").textContent = `Goal ${watGoalTotal} oz`;
+  $("#movGoal").textContent = currentView === "week" ? `Goal ${movGoal} Days` : `Goal ${movGoal} Days`;
+
+  $("#calSub").textContent = currentView === "day" ? "Estimated intake (today)" : "Total intake (range)";
+  $("#watSub").textContent = currentView === "day" ? "Hydration (today)" : "Total hydration (range)";
+
+  // Rings
+  ringSet("#ringCalories", Math.round(calTotal), calGoalTotal);
+  ringSet("#ringWater", Math.round(watTotal), watGoalTotal);
+
+  // Movement ring visibility logic
+  const ringMove = $("#ringMove");
+  if(currentView === "day"){
+    ringMove.style.opacity = ".45";
+    ringMove.style.filter = "grayscale(.2)";
+    $("#movVal").textContent = "—";
+    const fg = ringMove.querySelector(".ringFg");
+    fg.style.strokeDashoffset = 289;
+    fg.style.stroke = "rgba(255,255,255,.25)";
+    $("#movGoal").textContent = `Goal ${GOALS.workoutsPerWeek} Days (weekly)`;
+    $("#movSub").textContent = "Switch to Week/Month";
+    $("#movNote").textContent = "Movement goal is tracked by week/month. Tap This Week to see progress.";
+  } else {
+    ringMove.style.opacity = "1";
+    ringMove.style.filter = "none";
+    $("#movSub").textContent = currentView === "week" ? "Workout days (this week)" : "Workout days (this month)";
+    $("#movNote").textContent = "Tip: log workout days from the button at the top.";
+    ringSet("#ringMove", movCount, movGoal);
+  }
+
+  // Celebrate when hitting goals (per view)
+  if(calGoalTotal > 0 && calTotal >= calGoalTotal){
+    celebrateOnce(`cal-${currentView}-${days[0].getMonth()}-${days[0].getDate()}`, "Calories goal hit! 🥳");
+  }
+  if(watGoalTotal > 0 && watTotal >= watGoalTotal){
+    celebrateOnce(`wat-${currentView}-${days[0].getMonth()}-${days[0].getDate()}`, "Water goal hit! 💧✨");
+  }
+  if((currentView === "week" || currentView === "month") && movGoal > 0 && movCount >= movGoal){
+    celebrateOnce(`mov-${currentView}-${days[0].getMonth()}-${days[0].getDate()}`, "Movement goal hit! 💪🏾✨");
+  }
+
+  // Week/month section content (always visible, but adapts)
+  $("#weekTitle").textContent = currentView === "day" ? "This Week" : (currentView === "week" ? "This Week" : "This Month");
+  $("#rangeChip").textContent = currentView === "month" ? `${dayCount} days` : "7 days";
+  $("#waterChip").textContent = `${GOALS.waterOzPerDay} oz goal/day`;
+
+  // Build charts for the active range (day => show this week charts)
+  const chartDays = currentView === "month" ? days : rangeDays("week");
+  const chartDatesSet = new Set(chartDays.map(keyISO));
+
+  const mealMap = mealsByDay(mealsRaw); // use raw in case normalize double counts; we'll normalize inside
+  // Actually build from normalized meals
+  const mealMap2 = new Map();
+  meals.forEach(m=>{
+    mealMap2.set(m.date, (mealMap2.get(m.date)||0) + (m.totalKcal||0));
+  });
+
+  // Calories chart per-day goal
+  const calSvg = $("#calChart");
+  svgBarChart(calSvg, chartDays, mealMap2, GOALS.caloriesPerDay, "rgba(122,70,52,.78)");
+
+  // Water chart
+  const watSvg = $("#watChart");
+  svgBarChart(watSvg, chartDays, waterMap, GOALS.waterOzPerDay, "rgba(90,50,38,.72)");
+
+  // Stats
+  const chartTotals = chartDays.map(d=> mealMap2.get(keyISO(d))||0);
+  const sum = chartTotals.reduce((a,b)=>a+b,0);
+  const avg = Math.round(sum / chartDays.length);
+  $("#avgCal").textContent = isFinite(avg) ? avg : "—";
+
+  let bestIdx = 0;
+  chartTotals.forEach((v,i)=>{ if(v > chartTotals[bestIdx]) bestIdx=i; });
+  const bestVal = chartTotals[bestIdx] || 0;
+  const bestDayLabel = bestVal > 0 ? chartDays[bestIdx].toLocaleString(undefined,{weekday:"long"}) : "—";
+  $("#bestDay").textContent = bestDayLabel;
+  $("#bestDaySub").textContent = bestVal > 0 ? `${bestVal} kcal` : "No meals saved";
+
+  // Water avg
+  const watTotals = chartDays.map(d=> waterMap.get(keyISO(d))||0);
+  const watAvg = Math.round(watTotals.reduce((a,b)=>a+b,0) / chartDays.length);
+  $("#avgWat").textContent = isFinite(watAvg) ? watAvg : "—";
+
+  // Workout days in displayed chart range (week or month)
+  const rangeForWorkout = currentView === "month" ? days : rangeDays("week");
+  const setW = new Set(rangeForWorkout.map(keyISO));
+  const wCount = workoutsInDates(workoutDays, setW).length;
+  $("#wkDays").textContent = String(wCount);
+  $("#wkDaysSub").textContent = currentView === "month" ? "This month" : "This week";
+}
+
+/* ---------------------------
+   Modals + loggers
+---------------------------- */
+function openOverlay(id){
+  const ov = $("#"+id);
+  ov.classList.add("show");
+  ov.setAttribute("aria-hidden","false");
+}
+function closeOverlay(id){
+  const ov = $("#"+id);
+  ov.classList.remove("show");
+  ov.setAttribute("aria-hidden","true");
+}
+
+document.addEventListener("click", (e)=>{
+  const t = e.target;
+
+  // Tabs
+  const tab = t.closest(".tab");
+  if(tab){
+    setTab(tab.dataset.view);
+  }
+
+  // close modal
+  if(t && t.dataset && t.dataset.close){
+    closeOverlay(t.dataset.close);
+  }
+
+  // top buttons
+  if(t.closest("#btnWorkoutTop")){
+    syncWorkoutModal();
+    openOverlay("workoutOverlay");
+  }
+  if(t.closest("#btnWaterTop")){
+    const d = todayISO();
+    $("#waterDate").value = d;
+    $("#waterAmt").value = "";
+    $("#waterUnit").value = "oz";
+    openOverlay("waterOverlay");
+  }
+  if(t.closest("#btnHistory")){
+    syncHistoryModal();
+    openOverlay("historyOverlay");
+  }
+
+  // remove workout day chip
+  if(t.classList.contains("dayChip")){
+    const iso = t.dataset.iso;
+    const days = readWorkoutDays().filter(x => x !== iso);
+    saveWorkoutDays(days);
+    syncWorkoutModal();
+    renderAll();
+  }
+});
+
+// Keyboard accessibility for History card
+$("#btnHistory").addEventListener("keydown",(e)=>{
+  if(e.key === "Enter" || e.key === " "){
+    e.preventDefault();
+    syncHistoryModal();
+    openOverlay("historyOverlay");
+  }
+});
+
+function syncWorkoutModal(){
+  const days = readWorkoutDays();
+  $("#workCountChip").textContent = `${days.length} day${days.length===1?"":"s"}`;
+  const wrap = $("#workDayList");
+  wrap.innerHTML = "";
+  if(days.length === 0){
+    wrap.innerHTML = `<div style="color:var(--muted2);font-weight:800">No days yet — add one above.</div>`;
+    return;
+  }
+  days.slice().reverse().forEach(iso=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn dayChip";
+    b.dataset.iso = iso;
+    b.style.padding = "8px 10px";
+    b.style.borderRadius = "999px";
+    b.style.background = "rgba(90,50,38,.22)";
+    b.style.borderColor = "rgba(255,255,255,.14)";
+    b.textContent = iso;
+    wrap.appendChild(b);
+  });
+}
+
+$("#addWorkDay").addEventListener("click", ()=>{
+  const iso = $("#workDate").value || todayISO();
+  const days = readWorkoutDays();
+  if(!days.includes(iso)) days.push(iso);
+  saveWorkoutDays(days);
+  $("#workDate").value = "";
+  syncWorkoutModal();
+  renderAll();
+  showToast("Workout day saved ✅");
+});
+
+$("#saveWater").addEventListener("click", ()=>{
+  const date = ($("#waterDate").value || todayISO()).slice(0,10);
+  const amt = Number($("#waterAmt").value || 0);
+  const unit = $("#waterUnit").value;
+  if(!amt || amt <= 0){
+    showToast("Enter a water amount first.");
+    return;
+  }
+  const oz = unit === "cups" ? (amt * 8) : amt;
+  const logs = readWaterLogs();
+  logs.push({date, oz: Math.round(oz*10)/10});
+  saveWaterLogs(logs);
+  closeOverlay("waterOverlay");
+  renderAll();
+  showToast("Water saved 💧");
+});
+
+function syncHistoryModal(){
+  const meals = readMeals().map(normalizeMeal).sort((a,b)=> (b.date.localeCompare(a.date)));
+  $("#mealCountChip").textContent = `${meals.length} meal${meals.length===1?"":"s"}`;
+  const list = $("#mealList");
+  list.innerHTML = "";
+  if(meals.length === 0){
+    list.innerHTML = `<div style="color:var(--muted2);font-weight:800">No meals saved yet.</div>`;
+  } else {
+    meals.slice(0,8).forEach(m=>{
+      const div = document.createElement("div");
+      div.style.border = "1px solid rgba(255,255,255,.12)";
+      div.style.background = "rgba(0,0,0,.16)";
+      div.style.borderRadius = "16px";
+      div.style.padding = "12px";
+      div.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+          <div style="font-weight:950">${m.mealType} <span style="color:rgba(246,241,238,.55);font-weight:800">• ${m.date}</span></div>
+          <div style="font-weight:950;color:rgba(246,241,238,.9)">${m.totalKcal} kcal</div>
+        </div>
+        ${m.notes ? `<div style="margin-top:8px;color:rgba(246,241,238,.65);font-weight:800;font-size:13px">Notes: ${escapeHtml(String(m.notes)).slice(0,120)}</div>` : ""}
+      `;
+      list.appendChild(div);
+    });
+  }
+
+  // workouts
+  const days = readWorkoutDays();
+  $("#workDaysChip2").textContent = `${days.length} day${days.length===1?"":"s"}`;
+  const w = $("#workList2");
+  w.innerHTML = "";
+  if(days.length === 0){
+    w.innerHTML = `<div style="color:var(--muted2);font-weight:800">No workout days yet.</div>`;
+  } else {
+    days.slice().reverse().slice(0,18).forEach(iso=>{
+      const s = document.createElement("span");
+      s.className = "chip";
+      s.style.background = "rgba(90,50,38,.22)";
+      s.style.borderColor = "rgba(255,255,255,.14)";
+      s.textContent = iso;
+      w.appendChild(s);
+    });
+  }
+
+  // water
+  const logs = readWaterLogs().sort((a,b)=> b.date.localeCompare(a.date));
+  $("#waterCountChip2").textContent = `${logs.length} log${logs.length===1?"":"s"}`;
+  const wl = $("#waterList2");
+  wl.innerHTML = "";
+  if(logs.length === 0){
+    wl.innerHTML = `<div style="color:var(--muted2);font-weight:800">No water logged yet.</div>`;
+  } else {
+    logs.slice(0,10).forEach(l=>{
+      const div = document.createElement("div");
+      div.style.border = "1px solid rgba(255,255,255,.12)";
+      div.style.background = "rgba(0,0,0,.16)";
+      div.style.borderRadius = "16px";
+      div.style.padding = "10px 12px";
+      div.style.display = "flex";
+      div.style.justifyContent = "space-between";
+      div.style.fontWeight = "950";
+      div.innerHTML = `<span>${l.date}</span><span>${Math.round(l.oz*10)/10} oz</span>`;
+      wl.appendChild(div);
+    });
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// Close overlay if click background
+$$(".overlay").forEach(ov=>{
+  ov.addEventListener("click",(e)=>{
+    if(e.target === ov) closeOverlay(ov.id);
+  });
+});
+
+// Refresh when coming back from other pages
+window.addEventListener("focus", ()=> renderAll());
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderAll(); });
+
+// Init
+(function init(){
+  // default dates for modals
+  $("#workDate").value = "";
+  $("#waterDate").value = todayISO();
+
+  // show goal labels correctly
+  $("#calGoal").textContent = `Goal ${GOALS.caloriesPerDay} kcal`;
+  $("#watGoal").textContent = `Goal ${GOALS.waterOzPerDay} oz`;
+  $("#movGoal").textContent = `Goal ${GOALS.workoutsPerWeek} Days`;
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

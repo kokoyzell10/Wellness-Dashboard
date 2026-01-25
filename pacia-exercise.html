@@ -1,0 +1,1192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pacia – Movement</title>
+
+  <style>
+    :root{
+      /* Match Pacia dashboard “premium” aesthetic */
+      --bg0:#070606;
+      --bg1:#0e0b0a;
+      --card:#141111cc;
+      --card2:#171312cc;
+
+      --stroke:rgba(255,255,255,.10);
+      --soft:rgba(255,255,255,.06);
+
+      --text:#f6f1ee;
+      --muted:rgba(246,241,238,.70);
+      --muted2:rgba(246,241,238,.50);
+
+      --choc:#5a3226;
+      --choc2:#7a4634;
+
+      --good:#59d38c;
+      --warn:#ffcf6b;
+
+      --r:26px;
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --shadow2: 0 14px 40px rgba(0,0,0,.55);
+
+      --inputBg: rgba(255,255,255,.06);
+      --inputStroke: rgba(255,255,255,.14);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 50% 10%, rgba(122,70,52,.22), transparent 60%),
+        radial-gradient(900px 600px at 20% 40%, rgba(90,50,38,.20), transparent 62%),
+        radial-gradient(900px 600px at 80% 50%, rgba(90,50,38,.18), transparent 64%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      overflow-x:hidden;
+    }
+
+    /* subtle animated stars */
+    .stars, .stars::before, .stars::after{
+      position:fixed; inset:0;
+      content:"";
+      pointer-events:none;
+      z-index:0;
+      background-repeat:repeat;
+      opacity:.22;
+      mix-blend-mode:screen;
+      filter: blur(.2px);
+      transform: translateZ(0);
+    }
+    .stars{
+      background-image:
+        radial-gradient(1px 1px at 10px 10px, rgba(255,255,255,.8) 50%, transparent 60%),
+        radial-gradient(1px 1px at 40px 30px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 90px 70px, rgba(255,255,255,.45) 50%, transparent 60%),
+        radial-gradient(1px 1px at 140px 120px, rgba(255,255,255,.6) 50%, transparent 60%);
+      background-size: 180px 180px;
+      animation: drift1 18s linear infinite;
+      opacity:.14;
+    }
+    .stars::before{
+      background-image:
+        radial-gradient(1px 1px at 30px 60px, rgba(255,255,255,.65) 50%, transparent 60%),
+        radial-gradient(1px 1px at 120px 20px, rgba(255,255,255,.4) 50%, transparent 60%),
+        radial-gradient(1px 1px at 70px 140px, rgba(255,255,255,.5) 50%, transparent 60%);
+      background-size: 220px 220px;
+      animation: drift2 26s linear infinite;
+      opacity:.16;
+    }
+    .stars::after{
+      background-image:
+        radial-gradient(1px 1px at 20px 120px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 160px 40px, rgba(255,255,255,.35) 50%, transparent 60%),
+        radial-gradient(1px 1px at 110px 160px, rgba(255,255,255,.45) 50%, transparent 60%);
+      background-size: 260px 260px;
+      animation: drift3 34s linear infinite;
+      opacity:.11;
+    }
+    @keyframes drift1{ from{background-position:0 0} to{background-position:180px 360px} }
+    @keyframes drift2{ from{background-position:0 0} to{background-position:-320px 240px} }
+    @keyframes drift3{ from{background-position:0 0} to{background-position:260px -420px} }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 44px 18px 90px;
+    }
+
+    header{
+      text-align:center;
+      margin-bottom: 18px;
+      position:relative;
+    }
+    h1{
+      margin:0;
+      letter-spacing:.3px;
+      font-size: clamp(34px, 5vw, 54px);
+      font-weight: 900;
+    }
+    .sub{
+      margin: 10px 0 0;
+      color:var(--muted);
+      font-size: 16px;
+      font-weight:800;
+    }
+
+    .topTools{
+      position:absolute;
+      right:0;
+      top: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    @media (max-width: 900px){
+      .topTools{ position:static; margin-top:16px; justify-content:center; }
+    }
+
+    .pillBtn{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      display:flex; gap:8px; align-items:center;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      font-weight:900;
+      text-decoration:none;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
+    .pillBtn:active{ transform: translateY(0px) scale(.99); }
+    .pillBtn .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--choc);
+      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 16px;
+      align-items:start;
+      margin-top: 16px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .sectionTitle{
+      font-size: 28px;
+      font-weight: 950;
+      margin: 0 0 12px;
+      letter-spacing:.2px;
+    }
+    .miniTitle{
+      margin: 0 0 10px;
+      font-size: 18px;
+      font-weight: 950;
+    }
+
+    label{
+      display:block;
+      color: var(--muted);
+      font-weight: 900;
+      margin: 12px 0 8px;
+      font-size: 13px;
+      letter-spacing:.2px;
+      text-transform: uppercase;
+    }
+
+    input, select, textarea{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid var(--inputStroke);
+      background: var(--inputBg);
+      color: var(--text);
+      outline:none;
+      font-size: 15px;
+      font-weight: 850;
+      transition: border-color .12s ease, background .12s ease;
+    }
+    textarea{ resize: vertical; min-height: 92px; }
+    input::placeholder, textarea::placeholder{ color: rgba(246,241,238,.40); }
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.08);
+    }
+
+    /* Fix: dropdown list text hard to see (native select dropdown) */
+    select option{
+      background: #120f0f;
+      color: #f6f1ee;
+      font-weight: 850;
+    }
+
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 560px){ .row2{ grid-template-columns: 1fr; } }
+
+    .btnRow{ display:flex; gap: 10px; margin-top: 14px; justify-content:flex-end; flex-wrap:wrap; }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 950;
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.30); }
+    .btn:active{ transform: translateY(0px) scale(.99); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--choc2), var(--choc));
+      border-color: rgba(255,255,255,.18);
+      color:#fff;
+      box-shadow: 0 18px 34px rgba(122,70,52,.22);
+    }
+    .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
+    .btn.danger{
+      background: rgba(255,107,107,.12);
+      color: #ffd9d9;
+    }
+    .btn.danger:hover{ background: rgba(255,107,107,.18); }
+
+    .panelInner{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+
+    .hint{
+      color: var(--muted2);
+      font-weight: 850;
+      font-size: 12px;
+      margin-top: 10px;
+      line-height:1.35;
+    }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(90,50,38,.25);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .chipsRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 8px;
+      margin-top: 10px;
+      align-items:center;
+    }
+
+    /* calendar */
+    .calTop{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+    .calTitle{
+      font-weight: 950;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .calNav{ display:flex; gap:10px; }
+    .calGrid{
+      display:grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    .dow{
+      font-size: 12px;
+      color: var(--muted2);
+      font-weight: 950;
+      text-align:center;
+      padding: 6px 0;
+      opacity:.9;
+    }
+    .day{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      border-radius: 14px;
+      padding: 10px 0;
+      text-align:center;
+      cursor:pointer;
+      font-weight: 950;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      user-select:none;
+      position:relative;
+      overflow:hidden;
+    }
+    .day:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.16); background: rgba(0,0,0,.22); }
+    .day.muted{ opacity:.35; cursor:default; }
+    .day.today::after{
+      content:"";
+      position:absolute;
+      inset: -40px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.10), transparent 60%);
+      opacity:.9;
+    }
+    .day.logged{
+      border-color: rgba(89,211,140,.35);
+      background: rgba(89,211,140,.09);
+    }
+    .day.selected{
+      border-color: rgba(122,70,52,.55);
+      background: rgba(122,70,52,.20);
+    }
+
+    .statsRow{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+    @media (max-width: 560px){
+      .statsRow{ grid-template-columns: 1fr; }
+    }
+    .stat{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.14);
+      border-radius: 18px;
+      padding: 14px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+    }
+    .stat b{ font-size: 18px; }
+    .stat small{ display:block; color: var(--muted2); font-weight: 900; margin-top: 4px; }
+
+    /* muscle picker chips */
+    .musclePicker{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .mBtn{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 950;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+      display:flex; align-items:center; gap:8px;
+    }
+    .mBtn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.26); }
+    .mBtn:active{ transform: translateY(0px) scale(.99); }
+    .mBtn .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: rgba(255,255,255,.12);
+      box-shadow: 0 0 0 6px rgba(255,255,255,.04);
+    }
+    .mBtn.on{
+      background: rgba(122,70,52,.18);
+      border-color: rgba(122,70,52,.45);
+    }
+    .mBtn.on .dot{
+      background: var(--choc2);
+      box-shadow: 0 0 0 6px rgba(122,70,52,.16);
+    }
+
+    /* log list */
+    .logItem{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: 18px;
+      padding: 12px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .logItem .left{
+      min-width:0;
+    }
+    .logItem .date{
+      font-weight: 950;
+    }
+    .logItem .meta{
+      color: var(--muted2);
+      font-size: 12px;
+      font-weight: 850;
+      margin-top: 4px;
+      line-height:1.3;
+    }
+    .logItem .tags{
+      margin-top: 8px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 6px;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(10,8,8,.85);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow2);
+      color: var(--text);
+      font-weight: 950;
+      display:none;
+      z-index: 80;
+      backdrop-filter: blur(10px);
+      text-align:center;
+      max-width: min(560px, calc(100vw - 36px));
+    }
+    .toast.show{ display:block; animation: pop .20s ease; }
+    @keyframes pop{
+      from{ transform: translateX(-50%) translateY(8px); opacity:0 }
+      to{ transform: translateX(-50%) translateY(0); opacity:1 }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stars"></div>
+
+  <div class="wrap">
+    <header>
+      <h1>Pacia’s Movement</h1>
+      <p class="sub">Log workout days anytime — even days from last week</p>
+
+      <div class="topTools">
+        <a class="pillBtn" href="pacia-dashboard.html" title="Back to dashboard"><span class="dot"></span> Back</a>
+        <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
+        <a class="pillBtn" href="pacia-recipes.html" title="Open recipes"><span class="dot"></span> Recipes</a>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- LEFT: Workout day logger -->
+      <div class="card">
+        <div class="sectionTitle">Log Workout Days</div>
+
+        <div class="panelInner">
+          <div class="calTop">
+            <div class="calTitle" id="calTitle">Month</div>
+            <div class="calNav">
+              <button class="btn" id="prevMonth" type="button">←</button>
+              <button class="btn" id="nextMonth" type="button">→</button>
+            </div>
+          </div>
+
+          <div class="calGrid" id="dow"></div>
+          <div class="calGrid" id="cal"></div>
+
+          <div class="statsRow">
+            <div class="stat">
+              <div>
+                <b id="wkCount">0</b>
+                <small>This week</small>
+              </div>
+              <div class="chip" id="wkGoalChip">Goal 4 Days</div>
+            </div>
+            <div class="stat">
+              <div>
+                <b id="moCount">0</b>
+                <small>This month</small>
+              </div>
+              <div class="chip" id="moGoalChip">Goal 0 Days</div>
+            </div>
+          </div>
+
+          <div class="hint">
+            Click dates to <b>select</b> (brown). Dates already logged are <b>green</b>. You can select past days and hit “Save selected”.
+          </div>
+
+          <div class="btnRow" style="justify-content:flex-start">
+            <button class="btn" id="btnLogToday" type="button">Log today</button>
+            <button class="btn" id="btnClearSel" type="button">Clear selected</button>
+            <button class="btn primary" id="btnSaveSel" type="button">Save selected</button>
+          </div>
+
+          <label for="sessionNotes">Optional notes (saved per date)</label>
+          <textarea id="sessionNotes" placeholder="e.g. Legs + core, felt strong today"></textarea>
+
+          <div class="row2">
+            <div>
+              <label for="sessionMinutes">Duration (minutes)</label>
+              <input id="sessionMinutes" type="number" min="0" step="5" placeholder="e.g. 45"/>
+            </div>
+            <div>
+              <label for="sessionTag">Session tag (optional)</label>
+              <input id="sessionTag" placeholder="e.g. Strength, Cardio"/>
+            </div>
+          </div>
+
+          <div class="hint">
+            Storage keys: <span class="chip">paciaWorkoutDays</span> (what the dashboard reads) and <span class="chip">paciaWorkoutSessions</span> (optional details).
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Exercise picker + logged history -->
+      <div class="card">
+        <div class="sectionTitle">Exercise & History</div>
+
+        <div class="panelInner">
+          <div class="miniTitle">Muscle Groups (optional)</div>
+          <label for="exerciseSelect">Pick an exercise</label>
+          <select id="exerciseSelect"></select>
+
+          <div class="panelInner" style="margin-top:12px">
+            <div class="miniTitle">Muscle groups (from selection)</div>
+            <div class="chipsRow" id="muscleChips"></div>
+            <div class="hint" id="muscleSummary">Muscles: —</div>
+            <div class="hint">Tip: pick an exercise (or muscles below) to preview which muscle groups are saved.</div>
+          </div>
+
+          <div class="row2">
+
+            <div>
+              <label for="customExercise">Custom exercise name</label>
+              <input id="customExercise" placeholder="e.g. Dumbbell Rows"/>
+            </div>
+            <div>
+              <label for="customMuscles">Muscles (optional)</label>
+
+              <!-- clickable muscle chips -->
+              <div class="musclePicker" id="musclePicker">
+                <button class="mBtn" type="button" data-muscle="chest"><span class="dot"></span> Chest</button>
+                <button class="mBtn" type="button" data-muscle="back"><span class="dot"></span> Back</button>
+                <button class="mBtn" type="button" data-muscle="shoulders"><span class="dot"></span> Shoulders</button>
+                <button class="mBtn" type="button" data-muscle="biceps"><span class="dot"></span> Biceps</button>
+                <button class="mBtn" type="button" data-muscle="triceps"><span class="dot"></span> Triceps</button>
+                <button class="mBtn" type="button" data-muscle="core"><span class="dot"></span> Core</button>
+                <button class="mBtn" type="button" data-muscle="glutes"><span class="dot"></span> Glutes</button>
+                <button class="mBtn" type="button" data-muscle="quads"><span class="dot"></span> Quads</button>
+                <button class="mBtn" type="button" data-muscle="hamstrings"><span class="dot"></span> Hamstrings</button>
+                <button class="mBtn" type="button" data-muscle="calves"><span class="dot"></span> Calves</button>
+              </div>
+<!-- still keep the text field (auto-fills from chips, but you can type too) -->
+              <input id="customMuscles" placeholder="e.g. upper, core" style="margin-top:10px"/>
+            </div>
+          </div>
+
+          <div class="btnRow" style="justify-content:flex-start">
+            <button class="btn" id="btnAddToSession" type="button">Add to selected dates</button>
+            <button class="btn" id="btnSaveCustom" type="button">Save custom exercise</button>
+          </div>
+
+          <div class="hint">
+            “Add to selected dates” attaches the chosen exercise to any selected calendar days (stored in <span class="chip">paciaWorkoutSessions</span>).
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="panelInner">
+          <div class="miniTitle">Logged workout days</div>
+          <div id="logList"></div>
+          <div class="hint" id="emptyLog" style="display:none">No workout days logged yet — click dates on the calendar to start.</div>
+
+          <div class="btnRow" style="justify-content:flex-start">
+            <button class="btn danger" id="btnClearAll" type="button">Clear ALL workout days</button>
+          </div>
+
+          <div class="hint">
+            Safety: clearing removes <b>paciaWorkoutDays</b> and <b>paciaWorkoutSessions</b>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+<script>
+/* ----------------------------
+   Keys (dashboard-compatible)
+---------------------------- */
+const KEYS = {
+  WORKOUT_DAYS: "paciaWorkoutDays",     // dashboard reads this
+  WORKOUT_SESSIONS: "paciaWorkoutSessions", // optional details by date
+  EXERCISE_LIBRARY: "paciaExerciseLibrary",
+  LEGACY_EXERCISES: "pacia-exercises"   // from older movement file
+};
+
+const GOALS = {
+  workoutsPerWeek: 4
+};
+
+const MUSCLES = ["chest","back","shoulders","biceps","triceps","core","glutes","quads","hamstrings","calves"];
+const MUSCLE_LABEL = {
+  chest: "Chest",
+  back: "Back",
+  shoulders: "Shoulders",
+  biceps: "Biceps",
+  triceps: "Triceps",
+  core: "Core",
+  glutes: "Glutes",
+  quads: "Quads",
+  hamstrings: "Hamstrings",
+  calves: "Calves"
+};
+
+const $ = (sel, el=document) => el.querySelector(sel);
+const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+
+function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
+function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+function keyISO(d){ const x = new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); }
+function n(x){ const v = Number(x); return Number.isFinite(v) ? v : 0; }
+function uniqSorted(arr){ return Array.from(new Set(arr)).sort(); }
+function monthName(d){ return d.toLocaleString(undefined,{month:"long", year:"numeric"}); }
+
+function toast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function isISODate(s){ return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s); }
+
+/* ----------------------------
+   Storage
+---------------------------- */
+function readWorkoutDays(){
+  const days = safeParse(localStorage.getItem(KEYS.WORKOUT_DAYS) || "[]", []);
+  return Array.isArray(days) ? uniqSorted(days.filter(isISODate)) : [];
+}
+function writeWorkoutDays(days){
+  localStorage.setItem(KEYS.WORKOUT_DAYS, JSON.stringify(uniqSorted(days.filter(isISODate))));
+}
+
+function readSessions(){
+  const s = safeParse(localStorage.getItem(KEYS.WORKOUT_SESSIONS) || "{}", {});
+  return (s && typeof s === "object" && !Array.isArray(s)) ? s : {};
+}
+function writeSessions(obj){
+  localStorage.setItem(KEYS.WORKOUT_SESSIONS, JSON.stringify(obj || {}));
+}
+
+function migrateLegacy(){
+  // Migrate legacy "pacia-exercises" array -> exercise library (if library empty)
+  const lib = readExerciseLibrary();
+  if(lib.length) return;
+
+  const legacy = safeParse(localStorage.getItem(KEYS.LEGACY_EXERCISES) || "[]", []);
+  if(!Array.isArray(legacy) || !legacy.length) return;
+
+  const next = [];
+  for(const e of legacy){
+    const name = String(e?.name || "").trim();
+    if(!name) continue;
+    const muscles = Array.isArray(e?.muscles) ? e.muscles.map(m=>String(m).trim()).filter(Boolean) : [];
+    next.push({ id: crypto?.randomUUID?.() || ("ex_"+Math.random().toString(16).slice(2)), name, muscles });
+  }
+  if(next.length){
+    localStorage.setItem(KEYS.EXERCISE_LIBRARY, JSON.stringify(next));
+    toast("Migrated saved exercises ✅");
+  }
+}
+
+function readExerciseLibrary(){
+  const lib = safeParse(localStorage.getItem(KEYS.EXERCISE_LIBRARY) || "[]", []);
+  return Array.isArray(lib) ? lib : [];
+}
+function writeExerciseLibrary(list){
+  localStorage.setItem(KEYS.EXERCISE_LIBRARY, JSON.stringify(list));
+}
+
+/* ----------------------------
+   Default exercises + map
+---------------------------- */
+const exerciseMap = {
+  "Squats": ["quads","glutes","hamstrings","calves"],
+  "Lunges": ["quads","glutes","hamstrings","calves"],
+  "Walking": ["quads","hamstrings","calves"],
+  "Glute Bridges": ["glutes","hamstrings","core"],
+  "Pushups": ["chest","shoulders","triceps","core"],
+  "Plank": ["core","shoulders"],
+  "Rows": ["back","biceps"],
+  "Pullups": ["back","biceps"],
+  "Shoulder Press": ["shoulders","triceps"],
+  "Bicep Curls": ["biceps"],
+  "Tricep Dips": ["triceps","chest","shoulders"],
+  "Calf Raises": ["calves"],
+  "Leg Extension": ["quads"],
+  "Leg Curl": ["hamstrings"]
+};
+
+function normalizeMuscles(list){
+  const set = new Set();
+  (list || []).forEach(m=>{
+    const k = String(m || "").trim().toLowerCase();
+    if(MUSCLES.includes(k)) set.add(k);
+  });
+  return Array.from(set);
+}
+
+function ensureDefaultsInLibrary(){
+  const lib = readExerciseLibrary();
+  const have = new Set(lib.map(x => String(x.name).toLowerCase()));
+  const next = [...lib];
+
+  Object.entries(exerciseMap).forEach(([name, muscles])=>{
+    if(!have.has(name.toLowerCase())){
+      next.push({ id: crypto?.randomUUID?.() || ("ex_"+Math.random().toString(16).slice(2)), name, muscles: normalizeMuscles(muscles) });
+    }
+  });
+
+  // normalize stored muscles too
+  for(const ex of next){
+    ex.muscles = normalizeMuscles(ex.muscles);
+  }
+
+  writeExerciseLibrary(next);
+}
+
+function renderExerciseSelect(){
+  const sel = $("#exerciseSelect");
+  const lib = readExerciseLibrary().slice().sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  sel.innerHTML = `<option value="">Choose an exercise</option>` + lib.map(e => (
+    `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)}</option>`
+  )).join("");
+}
+
+/* ----------------------------
+   Calendar (select + save)
+---------------------------- */
+let viewMonth = new Date(); // any day in month
+viewMonth.setDate(1);
+viewMonth.setHours(0,0,0,0);
+
+let selected = new Set(); // ISO strings (selected to add)
+let workouts = readWorkoutDays(); // ISO strings (logged)
+
+function startOfWeek(d){
+  const x = new Date(d);
+  x.setHours(0,0,0,0);
+  const day = x.getDay(); // 0 Sun
+  x.setDate(x.getDate() - day);
+  return x;
+}
+function rangeDays(from, to){
+  const out = [];
+  const d = new Date(from);
+  d.setHours(0,0,0,0);
+  const end = new Date(to);
+  end.setHours(0,0,0,0);
+  while(d <= end){
+    out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+function thisWeekSet(){
+  const s = startOfWeek(new Date());
+  const e = new Date(s); e.setDate(e.getDate()+6);
+  return new Set(rangeDays(s,e).map(keyISO));
+}
+function thisMonthSet(){
+  const now = new Date();
+  const s = new Date(now.getFullYear(), now.getMonth(), 1);
+  const e = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  return new Set(rangeDays(s,e).map(keyISO));
+}
+function daysInMonth(year, month){ return new Date(year, month+1, 0).getDate(); }
+
+function renderDOW(){
+  const names = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const host = $("#dow");
+  host.innerHTML = names.map(n => `<div class="dow">${n}</div>`).join("");
+}
+
+function renderCalendar(){
+  $("#calTitle").textContent = monthName(viewMonth);
+
+  const year = viewMonth.getFullYear();
+  const month = viewMonth.getMonth();
+  const first = new Date(year, month, 1);
+  const startDay = first.getDay(); // 0-6
+  const total = daysInMonth(year, month);
+
+  const host = $("#cal");
+  host.innerHTML = "";
+
+  // pad before day 1
+  for(let i=0;i<startDay;i++){
+    const div = document.createElement("div");
+    div.className = "day muted";
+    div.textContent = "";
+    host.appendChild(div);
+  }
+
+  const today = todayISO();
+  for(let day=1; day<=total; day++){
+    const d = new Date(year, month, day);
+    const iso = keyISO(d);
+
+    const div = document.createElement("div");
+    div.className = "day";
+    div.textContent = String(day);
+
+    if(iso === today) div.classList.add("today");
+    if(workouts.includes(iso)) div.classList.add("logged");
+    if(selected.has(iso)) div.classList.add("selected");
+
+    div.addEventListener("click", ()=>{
+      if(selected.has(iso)) selected.delete(iso);
+      else selected.add(iso);
+      renderCalendar();
+      updateStats();
+    });
+
+    host.appendChild(div);
+  }
+}
+
+function updateStats(){
+  const wk = thisWeekSet();
+  const mo = thisMonthSet();
+  const wCount = workouts.filter(d => wk.has(d)).length;
+  const mCount = workouts.filter(d => mo.has(d)).length;
+
+  $("#wkCount").textContent = String(wCount);
+  $("#wkGoalChip").textContent = `Goal ${GOALS.workoutsPerWeek} Days`;
+
+  const daysThisMonth = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+  const monthGoal = GOALS.workoutsPerWeek * Math.round(daysThisMonth / 7);
+  $("#moCount").textContent = String(mCount);
+  $("#moGoalChip").textContent = `Goal ${monthGoal} Days`;
+}
+
+/* ----------------------------
+   Session details (optional)
+---------------------------- */
+function upsertSessionForDate(iso, patch){
+  const sessions = readSessions();
+  const base = sessions[iso] || { exercises: [], notes: "", minutes: 0, tag: "" };
+
+  const next = {
+    exercises: Array.isArray(base.exercises) ? base.exercises.slice() : [],
+    notes: String(base.notes || ""),
+    minutes: n(base.minutes || 0),
+    tag: String(base.tag || "")
+  };
+
+  if(patch){
+    if(typeof patch.notes === "string") next.notes = patch.notes;
+    if(Number.isFinite(Number(patch.minutes))) next.minutes = n(patch.minutes);
+    if(typeof patch.tag === "string") next.tag = patch.tag;
+
+    if(Array.isArray(patch.addExercises) && patch.addExercises.length){
+      const set = new Set(next.exercises.map(x => String(x)));
+      patch.addExercises.forEach(x => set.add(String(x)));
+      next.exercises = Array.from(set);
+    }
+  }
+
+  sessions[iso] = next;
+  writeSessions(sessions);
+}
+
+/* ----------------------------
+   Muscle UI (chips preview only)
+---------------------------- */
+let activeMuscles = [];
+let pickerMuscles = new Set();
+
+function setActiveMuscles(muscles){
+  activeMuscles = normalizeMuscles(muscles);
+
+  // chips (show selected muscle groups)
+  const chipHost = $("#muscleChips");
+  chipHost.innerHTML = activeMuscles.length
+    ? activeMuscles.map(m => `<span class="chip">${escapeHtml(MUSCLE_LABEL[m] || m)}</span>`).join("")
+    : `<span class="chip" style="opacity:.65">No muscle group set</span>`;
+
+  const summary = activeMuscles.length
+    ? `Muscles: ${activeMuscles.map(m => MUSCLE_LABEL[m] || m).join(", ")}`
+    : "Muscles: —";
+
+  const sumEl = $("#muscleSummary");
+  if(sumEl) sumEl.textContent = summary;
+}
+
+function setPickerFromMuscles(muscles){
+  pickerMuscles = new Set(normalizeMuscles(muscles));
+  $$("#musclePicker .mBtn").forEach(btn=>{
+    const m = btn.dataset.muscle;
+    btn.classList.toggle("on", pickerMuscles.has(m));
+  });
+  $("#customMuscles").value = Array.from(pickerMuscles).join(", ");
+}
+
+function setMusclesFromPicker(){
+  const list = Array.from(pickerMuscles);
+  $("#customMuscles").value = list.join(", ");
+  setActiveMuscles(list);
+}
+
+/* ----------------------------
+   Actions
+---------------------------- */
+
+$("#prevMonth").addEventListener("click", ()=>{
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()-1, 1);
+  renderCalendar();
+});
+$("#nextMonth").addEventListener("click", ()=>{
+  viewMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth()+1, 1);
+  renderCalendar();
+});
+
+$("#btnLogToday").addEventListener("click", ()=>{
+  selected.add(todayISO());
+  renderCalendar();
+  updateStats();
+  toast("Selected today ✅");
+});
+
+$("#btnClearSel").addEventListener("click", ()=>{
+  selected.clear();
+  renderCalendar();
+  updateStats();
+  toast("Selection cleared");
+});
+
+$("#btnSaveSel").addEventListener("click", ()=>{
+  const sel = Array.from(selected).filter(isISODate);
+  if(!sel.length){ toast("No dates selected"); return; }
+
+  const notes = $("#sessionNotes").value.trim();
+  const minutes = n($("#sessionMinutes").value || 0);
+  const tag = $("#sessionTag").value.trim();
+
+  workouts = uniqSorted([...workouts, ...sel]);
+  writeWorkoutDays(workouts);
+
+  sel.forEach(iso => {
+    upsertSessionForDate(iso, { notes, minutes, tag });
+  });
+
+  selected.clear();
+  renderCalendar();
+  updateStats();
+  renderLogList();
+  toast("Workout days saved ✅");
+});
+
+$("#btnSaveCustom").addEventListener("click", ()=>{
+  const name = $("#customExercise").value.trim();
+  if(!name){ toast("Enter a custom exercise name"); return; }
+
+  // use picker first; fallback to parsing input
+  let muscles = Array.from(pickerMuscles);
+  if(!muscles.length){
+    muscles = normalizeMuscles($("#customMuscles").value.split(",").map(s=>s.trim()));
+  }
+
+  if(!muscles.length){
+    toast("Pick at least 1 muscle group");
+    return;
+  }
+
+  const lib = readExerciseLibrary();
+  const exists = lib.some(x => String(x.name).toLowerCase() === name.toLowerCase());
+  if(exists){ toast("That exercise already exists"); return; }
+
+  lib.push({ id: crypto?.randomUUID?.() || ("ex_"+Math.random().toString(16).slice(2)), name, muscles });
+  writeExerciseLibrary(lib);
+
+  $("#customExercise").value = "";
+  pickerMuscles = new Set(muscles); // keep last selection for convenience
+  setPickerFromMuscles(muscles);
+  renderExerciseSelect();
+
+  toast("Custom exercise saved ✅");
+});
+
+$("#btnAddToSession").addEventListener("click", ()=>{
+  const selDates = Array.from(selected).filter(isISODate);
+  if(!selDates.length){ toast("Select date(s) first"); return; }
+
+  const lib = readExerciseLibrary();
+  const chosenId = $("#exerciseSelect").value;
+  let chosen = null;
+
+  if(chosenId){
+    chosen = lib.find(x => String(x.id) === String(chosenId));
+  }
+
+  if(!chosen){
+    const custom = $("#customExercise").value.trim();
+    if(!custom){ toast("Pick or type an exercise first"); return; }
+    // use picker or parse
+    const muscles = Array.from(pickerMuscles).length ? Array.from(pickerMuscles)
+      : normalizeMuscles($("#customMuscles").value.split(",").map(s=>s.trim()));
+    chosen = { id: "adhoc:"+custom, name: custom, muscles };
+  }
+
+  const notes = $("#sessionNotes").value.trim();
+  const minutes = n($("#sessionMinutes").value || 0);
+  const tag = $("#sessionTag").value.trim();
+
+  selDates.forEach(iso=>{
+    upsertSessionForDate(iso, {
+      notes: notes || undefined,
+      minutes,
+      tag,
+      addExercises: [chosen.name]
+    });
+  });
+
+  toast("Added exercise to selected dates ✅");
+  renderLogList();
+});
+
+/* exercise select -> highlight + sync picker */
+$("#exerciseSelect").addEventListener("change", ()=>{
+  const id = $("#exerciseSelect").value;
+  const lib = readExerciseLibrary();
+  const ex = lib.find(x => String(x.id) === String(id));
+  const muscles = ex?.muscles || [];
+  setActiveMuscles(muscles);
+  setPickerFromMuscles(muscles);
+});
+
+
+/* muscle picker toggles */
+$("#musclePicker").addEventListener("click", (e)=>{
+  const btn = e.target.closest("button[data-muscle]");
+  if(!btn) return;
+  const m = btn.dataset.muscle;
+  if(!MUSCLES.includes(m)) return;
+
+  // if user is manually toggling, treat as custom preview
+  $("#exerciseSelect").value = "";
+  if(pickerMuscles.has(m)) pickerMuscles.delete(m);
+  else pickerMuscles.add(m);
+
+  btn.classList.toggle("on", pickerMuscles.has(m));
+  setMusclesFromPicker();
+});
+
+/* allow typing muscles manually too */
+$("#customMuscles").addEventListener("input", ()=>{
+  // parse typed list and update picker + preview
+  $("#exerciseSelect").value = "";
+  const typed = normalizeMuscles($("#customMuscles").value.split(",").map(s=>s.trim()));
+  setPickerFromMuscles(typed);
+  setActiveMuscles(typed);
+});
+
+/* ----------------------------
+   History list
+---------------------------- */
+function formatDateNice(iso){
+  const d = new Date(iso+"T00:00:00");
+  return d.toLocaleDateString(undefined,{weekday:"short", month:"short", day:"numeric", year:"numeric"});
+}
+
+function renderLogList(){
+  const host = $("#logList");
+  host.innerHTML = "";
+  $("#emptyLog").style.display = workouts.length ? "none" : "block";
+
+  const sessions = readSessions();
+
+  const list = workouts.slice().sort((a,b)=> b.localeCompare(a));
+  list.forEach(iso=>{
+    const s = sessions[iso] || null;
+    const div = document.createElement("div");
+    div.className = "logItem";
+
+    const exercises = Array.isArray(s?.exercises) ? s.exercises : [];
+    const notes = (s?.notes || "").trim();
+    const tag = (s?.tag || "").trim();
+    const minutes = n(s?.minutes || 0);
+
+    div.innerHTML = `
+      <div class="left">
+        <div class="date">${escapeHtml(formatDateNice(iso))}</div>
+        <div class="meta">
+          ${tag ? `<b>${escapeHtml(tag)}</b> • ` : ``}
+          ${minutes ? `${escapeHtml(minutes)} min • ` : ``}
+          ${exercises.length ? `${escapeHtml(exercises.length)} exercise(s)` : `No exercises saved`}
+          ${notes ? `<br>${escapeHtml(notes)}` : ``}
+        </div>
+        ${exercises.length ? `<div class="tags">${exercises.map(t=>`<span class="chip">${escapeHtml(t)}</span>`).join("")}</div>` : ``}
+      </div>
+      <div>
+        <button class="btn danger" type="button" data-del="${escapeHtml(iso)}">Remove</button>
+      </div>
+    `;
+    host.appendChild(div);
+  });
+}
+
+$("#logList").addEventListener("click",(e)=>{
+  const btn = e.target.closest("button[data-del]");
+  if(!btn) return;
+  const iso = btn.dataset.del;
+  if(!isISODate(iso)) return;
+
+  if(!confirm("Remove this workout day?")) return;
+
+  workouts = workouts.filter(d => d !== iso);
+  writeWorkoutDays(workouts);
+
+  const sessions = readSessions();
+  delete sessions[iso];
+  writeSessions(sessions);
+
+  renderCalendar();
+  updateStats();
+  renderLogList();
+  toast("Removed.");
+});
+
+$("#btnClearAll").addEventListener("click", ()=>{
+  if(!confirm("Clear ALL workout days and session details?")) return;
+  localStorage.removeItem(KEYS.WORKOUT_DAYS);
+  localStorage.removeItem(KEYS.WORKOUT_SESSIONS);
+  workouts = [];
+  selected.clear();
+  renderCalendar();
+  updateStats();
+  renderLogList();
+  toast("Cleared.");
+});
+
+/* ----------------------------
+   Init
+---------------------------- */
+(function init(){
+  migrateLegacy();
+  ensureDefaultsInLibrary();
+  renderExerciseSelect();
+  renderDOW();
+
+  workouts = readWorkoutDays();
+
+  renderCalendar();
+  updateStats();
+  renderLogList();
+
+  // default preview
+  setActiveMuscles([]);
+  setPickerFromMuscles([]);
+})();
+</script>
+</body>
+</html>
