@@ -457,6 +457,9 @@
 </head>
 
 <body>
+  <button id="btnGoogle">Sign in with Google</button>
+<button id="btnLogout" style="display:none;">Logout</button>
+
   <div class="stars"></div>
 
   <div class="wrap">
@@ -1355,5 +1358,47 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
   renderAll();
 })();
 </script>
+ <script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const btnGoogle = document.getElementById("btnGoogle");
+  const btnLogout = document.getElementById("btnLogout");
+
+  btnGoogle.addEventListener("click", async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
+      }
+    });
+  });
+
+  btnLogout.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    location.reload();
+  });
+
+  async function refreshAuthUI() {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+
+    if (!user) {
+      btnGoogle.style.display = "";
+      btnLogout.style.display = "none";
+      return;
+    }
+
+    btnGoogle.style.display = "none";
+    btnLogout.style.display = "";
+  }
+
+  refreshAuthUI();
+</script>
+
 </body>
 </html>
