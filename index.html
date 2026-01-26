@@ -754,6 +754,21 @@ function saveToSupabase(payload){
   try { return window.saveToSupabase(payload); } catch(_e) { /* ignore */ }
 }
 
+// Debounced full-state sync (helps when other pages change localStorage and you return here)
+let __syncTimer = null;
+function syncAllToCloud(reason=""){
+  clearTimeout(__syncTimer);
+  __syncTimer = setTimeout(()=>{
+    saveToSupabase({
+      meals: readMeals(),
+      workoutDays: readWorkoutDays(),
+      waterLogs: readWaterLogs(),
+      _meta: { reason, at: new Date().toISOString() }
+    });
+  }, 450);
+}
+
+
 
 function todayISO(){
   const d = new Date();
@@ -1370,9 +1385,8 @@ $$(".overlay").forEach(ov=>{
 });
 
 // Refresh when coming back from other pages
-window.addEventListener("focus", ()=> renderAll());
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderAll(); });
-
+window.addEventListener("focus", ()=>{ renderAll(); syncAllToCloud("focus"); });
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ renderAll(); syncAllToCloud("visibility"); } });
 // Init
 (function init(){
   // default dates for modals
@@ -1415,7 +1429,7 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: new URL("auth-callback.html", window.location.href).href, window.location.href).href
+        redirectTo: new URL("auth-callback.html", window.location.href).href
       }
     });
   });
