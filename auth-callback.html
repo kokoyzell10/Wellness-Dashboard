@@ -32,8 +32,13 @@
     }
 
     // Redirect back to the page that initiated login (default: index.html in same folder)
-    const base = window.location.pathname.replace(/\/[^\/]*$/, "/");
-    window.location.replace(window.location.origin + base + "index.html");
-  </script>
+    let returnTo = null;
+    try { returnTo = localStorage.getItem("pacia_return_to"); localStorage.removeItem("pacia_return_to"); } catch(_e) {}
+    if (returnTo) {
+      window.location.replace(returnTo);
+    } else {
+      window.location.replace(new URL("index.html", window.location.href).href);
+    }
+</script>
 </body>
 </html>
