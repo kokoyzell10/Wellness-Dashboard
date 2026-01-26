@@ -805,6 +805,13 @@ function readWorkoutDays(){
 
 function saveWorkoutDays(days){
   localStorage.setItem(STORAGE.workoutDaysKey, JSON.stringify(Array.from(new Set(days)).sort()));
+
+  saveToSupabase({
+  meals: readMeals(),
+  workoutDays: readWorkoutDays(),
+  waterLogs: readWaterLogs()
+});
+
 }
 
 function readWaterLogs(){
@@ -822,6 +829,13 @@ function readWaterLogs(){
 
 function saveWaterLogs(logs){
   localStorage.setItem(STORAGE.waterLogsKey, JSON.stringify(logs));
+
+  saveToSupabase({
+  meals: readMeals(),
+  workoutDays: readWorkoutDays(),
+  waterLogs: readWaterLogs()
+});
+
 }
 
 function startOfISOWeek(d){
@@ -1383,6 +1397,32 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
     location.reload();
   });
 
+   async function saveToSupabase(payload) {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return;
+
+  await supabase
+    .from("wellness_state")
+    .upsert({
+      user_id: auth.user.id,
+      data: payload,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+}
+
+async function loadFromSupabase() {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return null;
+
+  const { data } = await supabase
+    .from("wellness_state")
+    .select("data")
+    .eq("user_id", auth.user.id)
+    .single();
+
+  return data?.data || null;
+}
+
   async function refreshAuthUI() {
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
@@ -1396,6 +1436,20 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
     btnGoogle.style.display = "none";
     btnLogout.style.display = "";
   }
+
+   const cloudData = await loadFromSupabase();
+if (cloudData) {
+  if (cloudData.meals) {
+    localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
+  }
+  if (cloudData.workoutDays) {
+    localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
+  }
+  if (cloudData.waterLogs) {
+    localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
+  }
+  renderAll();
+}
 
   refreshAuthUI();
 </script>
