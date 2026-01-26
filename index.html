@@ -721,6 +721,7 @@
   <div class="confetti" id="confetti"></div>
 
 <script>
+
 /* ---------------------------
    Shared local storage keys
    (Dashboard reads multiple options to stay compatible with older file versions)
@@ -1375,8 +1376,8 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
  <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-  const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL";
-  const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+  const SUPABASE_URL = https://qtvyhdjhgroeswtsfldi.supabase.co;
+  const SUPABASE_ANON_KEY = Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe;
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1397,7 +1398,23 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
     location.reload();
   });
 
-   async function saveToSupabase(payload) {
+
+async function loadFromSupabase() {
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth?.user) return null;
+
+  const { data, error } = await supabase
+    .from("wellness_state")
+    .select("data")
+    .eq("user_id", auth.user.id)
+    .single();
+
+  if (error || !data) return null;
+  return data.data;
+}
+
+
+saveToSupabase = async function(payload) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) return;
 
@@ -1408,20 +1425,7 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
       data: payload,
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id" });
-}
-
-async function loadFromSupabase() {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth?.user) return null;
-
-  const { data } = await supabase
-    .from("wellness_state")
-    .select("data")
-    .eq("user_id", auth.user.id)
-    .single();
-
-  return data?.data || null;
-}
+};
 
   async function refreshAuthUI() {
     const { data } = await supabase.auth.getUser();
