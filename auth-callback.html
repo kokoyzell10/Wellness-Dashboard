@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Signing you in…</title>
+</head>
+<body style="margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0b0909;color:#f6f1ee">
+  <div style="text-align:center;max-width:520px;padding:24px">
+    <div style="font-weight:800;font-size:22px;letter-spacing:.2px">Signing you in…</div>
+    <div style="opacity:.75;margin-top:10px;font-weight:600">One moment.</div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
+    const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+
+    try {
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) console.error("exchangeCodeForSession error:", error);
+      }
+    } catch (e) {
+      console.error("Auth callback error:", e);
+    }
+
+    // Redirect back to the page that initiated login (default: index.html in same folder)
+    const base = window.location.pathname.replace(/\/[^\/]*$/, "/");
+    window.location.replace(window.location.origin + base + "index.html");
+  </script>
+</body>
+</html>
