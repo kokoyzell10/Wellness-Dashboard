@@ -741,6 +741,13 @@ const GOALS = {
 const $ = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 
+// Cloud sync hook (no-op by default; overwritten by the Supabase module script below)
+window.saveToSupabase = window.saveToSupabase || (async function(_payload){});
+function saveToSupabase(payload){
+  try { return window.saveToSupabase(payload); } catch(_e) { /* ignore */ }
+}
+
+
 function todayISO(){
   const d = new Date();
   d.setHours(0,0,0,0);
@@ -1372,14 +1379,25 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
 
   renderAll();
 })();
+
+  // Expose helpers to module scripts (modules don't automatically see classic-script globals by name)
+  window.renderAll = window.renderAll || renderAll;
+  window.showToast = window.showToast || showToast;
+
 </script>
  <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-  const SUPABASE_URL = https://qtvyhdjhgroeswtsfldi.supabase.co;
-  const SUPABASE_ANON_KEY = Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe;
+  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
+  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Quick sanity check (Supabase anon keys are usually JWTs starting with "eyJ")
+  if (typeof SUPABASE_ANON_KEY === "string" && !SUPABASE_ANON_KEY.startsWith("eyJ")) {
+    console.warn("SUPABASE_ANON_KEY does not look like a Supabase anon key. Double-check Settings → API → anon public key.");
+  }
+
 
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
@@ -1414,7 +1432,7 @@ async function loadFromSupabase() {
 }
 
 
-saveToSupabase = async function(payload) {
+window.saveToSupabase = async function(payload) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) return;
 
@@ -1441,21 +1459,36 @@ saveToSupabase = async function(payload) {
     btnLogout.style.display = "";
   }
 
-   const cloudData = await loadFromSupabase();
-if (cloudData) {
-  if (cloudData.meals) {
-    localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
-  }
-  if (cloudData.workoutDays) {
-    localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
-  }
-  if (cloudData.waterLogs) {
-    localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
-  }
-  renderAll();
-}
+   
+  async function syncFromCloudIfSignedIn(){
+    const cloudData = await loadFromSupabase();
+    if (!cloudData) return;
 
-  refreshAuthUI();
+    // Write cloud state into the same localStorage keys the rest of the app already uses
+    if (cloudData.meals) {
+      localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
+    }
+    if (cloudData.workoutDays) {
+      localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
+    }
+    if (cloudData.waterLogs) {
+      localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
+    }
+
+    window.renderAll && window.renderAll();
+  }
+
+  // Keep UI + data synced across OAuth redirects and future logins/logouts
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    await refreshAuthUI();
+    if (session?.user) await syncFromCloudIfSignedIn();
+  });
+
+  // Initial paint
+  await refreshAuthUI();
+  await syncFromCloudIfSignedIn();
+
+
 </script>
 
 </body>
