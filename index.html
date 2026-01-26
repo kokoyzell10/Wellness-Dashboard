@@ -402,6 +402,9 @@
     }
     .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
 
+    #authLabel{ font-weight:900; }
+    .pillBtn[disabled]{ opacity:.55; cursor:not-allowed; transform:none !important; }
+
     /* toast + confetti */
     .toast{
       position:fixed;
@@ -457,10 +460,7 @@
 </head>
 
 <body>
-  <button id="btnGoogle">Sign in with Google</button>
-<button id="btnLogout" style="display:none;">Logout</button>
-
-  <div class="stars"></div>
+<div class="stars"></div>
 
   <div class="wrap">
     <header>
@@ -468,6 +468,13 @@
       <p class="sub">A calm space for balance, nourishment, and movement</p>
 
       <div class="topTools">
+        <button class="pillBtn" id="btnGoogle" type="button" title="Sign in with Google">
+          <span class="dot"></span> <span id="authLabel">Sign in</span>
+        </button>
+        <button class="pillBtn" id="btnLogout" type="button" style="display:none" title="Sign out">
+          <span class="dot"></span> Sign out
+        </button>
+
         <button class="pillBtn" id="btnWorkoutTop" type="button" title="Log workout days">
           <span class="dot"></span> Log Workout Days
         </button>
@@ -1401,12 +1408,14 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
 
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
+  const authLabel = document.getElementById("authLabel");
 
   btnGoogle.addEventListener("click", async () => {
+    try { localStorage.setItem("pacia_return_to", window.location.href); } catch(_e) {}
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
+        redirectTo: new URL("auth-callback.html", window.location.href).href, window.location.href).href
       }
     });
   });
