@@ -817,6 +817,75 @@ function uid(){
 }
 
 /* ---------------------------
+   Cloud Sync (Supabase)
+   - Keeps this page in sync with index.html and other pages
+   - Does NOT change your UI. LocalStorage remains the working store.
+   - Uses the shared "wellness_state" row; preserves unknown keys by merging with cloud cache.
+---------------------------- */
+// Cloud sync hook (no-op by default; overwritten by the Supabase module script below)
+window.saveToSupabase = window.saveToSupabase || (async function(_payload){});
+function saveToSupabase(payload){
+  try { return window.saveToSupabase(payload); } catch(_e) { /* ignore */ }
+}
+
+// LocalStorage -> cloud "data" object keys used across the app
+function buildLocalWellnessState(){
+  // NOTE: keep keys aligned with index.html + other pages
+  const out = {};
+
+  // Core shared keys (used by dashboard)
+  const meals = safeParse(localStorage.getItem("paciaMeals") || "[]", []);
+  out.meals = Array.isArray(meals) ? meals : [];
+
+  out.workoutDays = safeParse(localStorage.getItem("paciaWorkoutDays") || "[]", []);
+  out.waterLogs = safeParse(localStorage.getItem("paciaWaterLogs") || "[]", []);
+  out.workoutSessions = safeParse(localStorage.getItem("paciaWorkoutSessions") || "[]", []);
+  out.exerciseLibrary = safeParse(localStorage.getItem("paciaExerciseLibrary") || "[]", []);
+  out.recipes = safeParse(localStorage.getItem("paciaRecipes") || "[]", []);
+
+  // Food page extras (safe to include; other pages will simply ignore)
+  out.foodDB = safeParse(localStorage.getItem("paciaFoodDB") || "null", null) || {};
+  out.barcodeDB = safeParse(localStorage.getItem("paciaBarcodeDB") || "null", null) || {};
+
+  return out;
+}
+
+let __cloudSyncTimer = null;
+async function syncAllToCloud(reason){
+  try{
+    const localState = buildLocalWellnessState();
+    const cloudCache = (window.__wellnessCloudCache && typeof window.__wellnessCloudCache === "object")
+      ? window.__wellnessCloudCache
+      : {};
+    const payload = { ...cloudCache, ...localState };
+
+    await saveToSupabase(payload);
+
+    // keep cache fresh so we don't wipe unknown keys later
+    window.__wellnessCloudCache = payload;
+  } catch(_e){
+    // stay silent; offline/local-first
+  }
+}
+function queueCloudSync(reason){
+  clearTimeout(__cloudSyncTimer);
+  __cloudSyncTimer = setTimeout(()=>syncAllToCloud(reason), 800);
+}
+
+// Called after cloud->local writes to refresh in-memory variables + UI
+window.__paciaFoodOnCloudSync = function(){
+  try{
+    // Reload in-memory DBs from localStorage
+    foodDB = safeParse(localStorage.getItem(KEYS.FOOD_DB), null) || defaultFoodDB();
+    barcodeDB = safeParse(localStorage.getItem(KEYS.BARCODE_DB), {}) || {};
+    renderCurrentMeal();
+    renderDayView();
+  } catch(_e){}
+};
+
+
+
+/* ---------------------------
    Food DB (calories PER SERVING)
 ---------------------------- */
 function defaultFoodDB(){
@@ -831,8 +900,8 @@ function defaultFoodDB(){
 }
 let foodDB = safeParse(localStorage.getItem(KEYS.FOOD_DB), null) || defaultFoodDB();
 let barcodeDB = safeParse(localStorage.getItem(KEYS.BARCODE_DB), {}) || {};
-function saveFoodDB(){ localStorage.setItem(KEYS.FOOD_DB, JSON.stringify(foodDB)); }
-function saveBarcodeDB(){ localStorage.setItem(KEYS.BARCODE_DB, JSON.stringify(barcodeDB)); }
+function saveFoodDB(){ localStorage.setItem(KEYS.FOOD_DB, JSON.stringify(foodDB)); queueCloudSync('foodDB'); }
+function saveBarcodeDB(){ localStorage.setItem(KEYS.BARCODE_DB, JSON.stringify(barcodeDB)); queueCloudSync('barcodeDB'); }
 
 /* ---------------------------
    Meals
@@ -854,6 +923,7 @@ function readMeals(){
 }
 function writeMeals(meals){
   localStorage.setItem(KEYS.MEALS, JSON.stringify(meals));
+  queueCloudSync('meals');
 }
 
 /* Normalize older shapes for display (does NOT rewrite unless you save again) */
@@ -1357,7 +1427,100 @@ $("#mealDate").addEventListener("change", renderDayView);
   renderCurrentMeal();
   renderDayView();
 })();
+
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
+  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Quick sanity check (Supabase anon keys are usually JWTs starting with "eyJ")
+  if (typeof SUPABASE_ANON_KEY === "string" && !SUPABASE_ANON_KEY.startsWith("eyJ")) {
+    console.warn("SUPABASE_ANON_KEY does not look like a Supabase anon key. Double-check Settings → API → anon public key.");
+  }
+
+  async function loadFromSupabase() {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return null;
+
+    const { data, error } = await supabase
+      .from("wellness_state")
+      .select("data")
+      .eq("user_id", auth.user.id)
+      .single();
+
+    if (error || !data) return null;
+    return data.data;
+  }
+
+  // Exposed hook: classic-script calls window.saveToSupabase(payload)
+  window.saveToSupabase = async function(payload) {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return;
+
+    await supabase
+      .from("wellness_state")
+      .upsert({
+        user_id: auth.user.id,
+        data: payload,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+
+    // keep cache fresh so we don't wipe unknown keys later
+    window.__wellnessCloudCache = payload;
+  };
+
+  async function syncFromCloudIfSignedIn(){
+    const cloudData = await loadFromSupabase();
+    if (!cloudData) return;
+
+    // Cache full blob so writes preserve unknown keys
+    window.__wellnessCloudCache = cloudData;
+
+    // Write cloud state into the same localStorage keys the rest of the app already uses
+    if (cloudData.meals) {
+      localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
+    }
+    if (cloudData.workoutDays) {
+      localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
+    }
+    if (cloudData.waterLogs) {
+      localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
+    }
+    if (cloudData.workoutSessions) {
+      localStorage.setItem("paciaWorkoutSessions", JSON.stringify(cloudData.workoutSessions));
+    }
+    if (cloudData.exerciseLibrary) {
+      localStorage.setItem("paciaExerciseLibrary", JSON.stringify(cloudData.exerciseLibrary));
+    }
+    if (cloudData.recipes) {
+      localStorage.setItem("paciaRecipes", JSON.stringify(cloudData.recipes));
+    }
+
+    // Food-page extras
+    if (cloudData.foodDB) {
+      localStorage.setItem("paciaFoodDB", JSON.stringify(cloudData.foodDB));
+    }
+    if (cloudData.barcodeDB) {
+      localStorage.setItem("paciaBarcodeDB", JSON.stringify(cloudData.barcodeDB));
+    }
+
+    // Refresh this page's in-memory state + UI
+    window.__paciaFoodOnCloudSync && window.__paciaFoodOnCloudSync();
+  }
+
+  // Keep data synced across logins/logouts
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    if (session?.user) await syncFromCloudIfSignedIn();
+  });
+
+  // Initial sync
+  await syncFromCloudIfSignedIn();
+</script>
+
 </script>
 </body>
 </html>
-
