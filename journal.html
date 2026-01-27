@@ -1,0 +1,1260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Pacia’s Journal</title>
+  <style>
+    :root{
+      /* Chocolate theme (deep + readable) */
+      --bg0:#070606;
+      --bg1:#0e0b0a;
+      --card:#141111cc;
+      --card2:#171312cc;
+      --stroke:rgba(255,255,255,.10);
+      --soft:rgba(255,255,255,.06);
+      --text:#f6f1ee;
+      --muted:rgba(246,241,238,.70);
+      --muted2:rgba(246,241,238,.50);
+
+      --choc:#5a3226;        /* primary chocolate */
+      --choc2:#7a4634;       /* hover */
+      --chocGlow:rgba(122,70,52,.35);
+
+      --good:#59d38c;
+      --warn:#ffcf6b;
+      --bad:#ff6b6b;
+
+      --r:26px;
+      --shadow: 0 24px 70px rgba(0,0,0,.55);
+      --shadow2: 0 14px 40px rgba(0,0,0,.55);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 50% 10%, rgba(122,70,52,.22), transparent 60%),
+        radial-gradient(900px 600px at 20% 40%, rgba(90,50,38,.20), transparent 62%),
+        radial-gradient(900px 600px at 80% 50%, rgba(90,50,38,.18), transparent 64%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      overflow-x:hidden;
+    }
+
+    /* subtle animated stars (safe + lightweight) */
+    .stars, .stars::before, .stars::after{
+      position:fixed; inset:0;
+      content:"";
+      pointer-events:none;
+      z-index:0;
+      background-repeat:repeat;
+      opacity:.22;
+      mix-blend-mode:screen;
+      filter: blur(.2px);
+      transform: translateZ(0);
+    }
+    .stars{
+      background-image:
+        radial-gradient(1px 1px at 10px 10px, rgba(255,255,255,.8) 50%, transparent 60%),
+        radial-gradient(1px 1px at 40px 30px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 90px 70px, rgba(255,255,255,.45) 50%, transparent 60%),
+        radial-gradient(1px 1px at 140px 120px, rgba(255,255,255,.6) 50%, transparent 60%);
+      background-size: 180px 180px;
+      animation: drift1 18s linear infinite;
+      opacity:.16;
+    }
+    .stars::before{
+      background-image:
+        radial-gradient(1px 1px at 30px 60px, rgba(255,255,255,.65) 50%, transparent 60%),
+        radial-gradient(1px 1px at 120px 20px, rgba(255,255,255,.4) 50%, transparent 60%),
+        radial-gradient(1px 1px at 70px 140px, rgba(255,255,255,.5) 50%, transparent 60%);
+      background-size: 220px 220px;
+      animation: drift2 26s linear infinite;
+      opacity:.18;
+    }
+    .stars::after{
+      background-image:
+        radial-gradient(1px 1px at 20px 120px, rgba(255,255,255,.55) 50%, transparent 60%),
+        radial-gradient(1px 1px at 160px 40px, rgba(255,255,255,.35) 50%, transparent 60%),
+        radial-gradient(1px 1px at 110px 160px, rgba(255,255,255,.45) 50%, transparent 60%);
+      background-size: 260px 260px;
+      animation: drift3 34s linear infinite;
+      opacity:.12;
+    }
+    @keyframes drift1{ from{background-position:0 0} to{background-position:180px 360px} }
+    @keyframes drift2{ from{background-position:0 0} to{background-position:-320px 240px} }
+    @keyframes drift3{ from{background-position:0 0} to{background-position:260px -420px} }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 44px 18px 90px;
+    }
+
+    header{
+      text-align:center;
+      margin-bottom: 26px;
+      position:relative;
+    }
+    h1{
+      margin:0;
+      letter-spacing:.3px;
+      font-size: clamp(34px, 5vw, 58px);
+      font-weight: 800;
+    }
+    .sub{
+      margin: 10px 0 0;
+      color:var(--muted);
+      font-size: 18px;
+    }
+
+    .topTools{
+      position:absolute;
+      right:0;
+      top: 10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
+    }
+    .pillBtn{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      display:flex; gap:8px; align-items:center;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      font-weight:700;
+    }
+    .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
+    .pillBtn .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--choc);
+      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
+    }
+
+    .card{
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .tabs{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 8px 0 18px;
+    }
+    .tab{
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 14px 12px;
+      text-align:center;
+      cursor:pointer;
+      font-weight: 800;
+      transition: background .12s ease, transform .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+    .tab:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.18); }
+    .tab.active{
+      background: linear-gradient(180deg, rgba(90,50,38,.92), rgba(90,50,38,.72));
+      border-color: rgba(255,255,255,.20);
+      box-shadow: 0 12px 28px rgba(90,50,38,.28);
+    }
+
+    .rings{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      align-items:stretch;
+      margin-top: 8px;
+    }
+    @media (max-width: 900px){
+      .rings{ grid-template-columns: 1fr; }
+      .topTools{ position:static; margin-top:16px; justify-content:center; }
+    }
+
+    .ringCard{
+      padding: 22px;
+      border-radius: 22px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 12px;
+      min-height: 280px;
+      position:relative;
+      overflow:hidden;
+    }
+    .ringTitle{
+      margin-top: 4px;
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing:.2px;
+    }
+    .ringSub{
+      color:var(--muted);
+      margin-top:-6px;
+      font-weight: 700;
+    }
+    .ringGoal{
+      color: rgba(246,241,238,.85);
+      font-weight: 800;
+      margin-top: 2px;
+      opacity:.95;
+    }
+
+    .ringWrap{ width: 160px; height: 160px; position:relative; }
+    .ringSvg{ width:100%; height:100%; transform: rotate(-90deg); }
+    .ringBg{ stroke: rgba(255,255,255,.12); stroke-width: 14; fill:none; }
+    .ringFg{ stroke: var(--choc2); stroke-width: 14; fill:none; stroke-linecap: round; filter: drop-shadow(0 0 10px rgba(122,70,52,.25)); }
+    .ringNum{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 950;
+      font-size: 34px;
+      letter-spacing:.2px;
+      color: var(--text);
+      text-shadow: 0 10px 30px rgba(0,0,0,.6);
+    }
+    .ringNote{
+      font-size: 13px;
+      color: var(--muted2);
+      text-align:center;
+      max-width: 260px;
+      line-height:1.35;
+      margin-top: 2px;
+    }
+
+    .section{
+      margin-top: 22px;
+    }
+    .sectionTitle{
+      font-size: 30px;
+      font-weight: 950;
+      margin: 0 0 14px;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 1050px){
+      .actions{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px){
+      .actions{ grid-template-columns: 1fr; }
+    }
+
+    .action{
+      padding: 18px;
+      border-radius: 22px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      cursor:pointer;
+      text-decoration:none;
+      color:var(--text);
+      min-height: 112px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      gap: 8px;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .action:hover{ transform: translateY(-2px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.28); }
+    .action h3{ margin:0; font-size: 20px; font-weight: 900; }
+    .action p{ margin:0; color:var(--muted); font-weight:700; }
+
+    .weekGrid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 14px;
+    }
+    @media (max-width: 980px){ .weekGrid{ grid-template-columns: 1fr; } }
+
+    .stats{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 520px){ .stats{ grid-template-columns: 1fr; } }
+
+    .stat{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+    }
+    .statLabel{ color: var(--muted); font-weight: 800; font-size: 13px; letter-spacing:.2px; text-transform: uppercase; }
+    .statValue{ margin-top: 6px; font-size: 22px; font-weight: 950; }
+    .statSmall{ margin-top: 4px; color: var(--muted2); font-weight: 700; font-size: 13px; }
+
+    .chartBox{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      overflow:hidden;
+    }
+    .chartHead{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .chartHead h4{ margin:0; font-size: 16px; font-weight: 950; }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(90,50,38,.25);
+      color: var(--text);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    .chartSvg{ width:100%; height: 170px; display:block; }
+
+    /* modal */
+    .overlay{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.60);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .overlay.show{ display:flex; }
+    .modal{
+      width: min(560px, 100%);
+      background: linear-gradient(180deg, rgba(18,14,13,.98), rgba(12,10,10,.98));
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+    .modalTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .modalTop h3{ margin:0; font-size: 20px; font-weight: 950; }
+    .x{
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      font-weight: 900;
+    }
+
+    label{ display:block; color: var(--muted); font-weight: 800; margin: 12px 0 8px; }
+    input, select{
+      width:100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      outline:none;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    input::placeholder{ color: rgba(246,241,238,.40); }
+    .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width:520px){ .row2{ grid-template-columns: 1fr; } }
+
+    .btnRow{ display:flex; gap: 10px; margin-top: 14px; justify-content:flex-end; flex-wrap:wrap; }
+    .btn{
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 14px;
+      padding: 12px 14px;
+      cursor:pointer;
+      font-weight: 950;
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.20); background: rgba(0,0,0,.30); }
+    .btn.primary{
+      background: linear-gradient(180deg, var(--choc2), var(--choc));
+      border-color: rgba(255,255,255,.18);
+      color: #fff;
+      box-shadow: 0 18px 34px rgba(122,70,52,.22);
+    }
+    .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
+
+    /* toast + confetti */
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: rgba(10,8,8,.85);
+      border:1px solid rgba(255,255,255,.14);
+      border-radius: 16px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow2);
+      color: var(--text);
+      font-weight: 900;
+      display:none;
+      z-index: 60;
+      backdrop-filter: blur(10px);
+    }
+    .toast.show{ display:block; animation: pop .20s ease; }
+    @keyframes pop{ from{ transform: translateX(-50%) translateY(8px); opacity:0 } to{ transform: translateX(-50%) translateY(0); opacity:1 } }
+
+    .confetti{
+      position:fixed; inset:0;
+      pointer-events:none;
+      z-index: 55;
+      overflow:hidden;
+      display:none;
+    }
+    .confetti.show{ display:block; }
+    .confetti i{
+      position:absolute;
+      top:-20px;
+      width:10px; height:16px;
+      border-radius: 4px;
+      opacity:.9;
+      animation: fall 1.4s linear forwards;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.35));
+    }
+    @keyframes fall{
+      to{
+        transform: translateY(calc(100vh + 40px)) rotate(220deg);
+        opacity:.95;
+      }
+    }
+
+    footer{
+      margin-top: 22px;
+      color: var(--muted2);
+      text-align:center;
+      font-weight: 800;
+      font-size: 13px;
+    }
+      
+    /* Auth buttons (match pill UI) */
+    #btnGoogle, #btnLogout{
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 80;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      font-weight: 900;
+    }
+    #btnGoogle:hover, #btnLogout:hover{
+      transform: translateY(-1px);
+      background: rgba(0,0,0,.35);
+      border-color: rgba(255,255,255,.18);
+    }
+    #btnGoogle::before, #btnLogout::before{
+      content:"";
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: var(--choc);
+      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
+      display:inline-block;
+      flex: 0 0 auto;
+    }
+    #btnLogout::before{
+      background: rgba(255,107,107,.90);
+      box-shadow: 0 0 0 6px rgba(255,107,107,.12);
+    }
+
+      /* Layout fix: prevent header pill overlap with title */
+    header{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows: auto auto;
+      column-gap:12px;
+      align-items:start;
+    }
+    header h1{
+      grid-column:2;
+      grid-row:1;
+      justify-self:center;
+    }
+    header .sub{
+      grid-column:2;
+      grid-row:2;
+      justify-self:center;
+    }
+    header .topTools{
+      position:static;
+      grid-column:3;
+      grid-row:1;
+      justify-self:end;
+      align-self:start;
+      margin:0;
+    }
+    @media (max-width: 900px){
+      header{
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+      header h1, header .sub{
+        grid-column:1;
+        justify-self:center;
+      }
+      header .topTools{
+        grid-column:1;
+        grid-row:3;
+        justify-self:center;
+        margin-top:16px;
+        justify-content:center;
+      }
+    }
+</style>
+
+  <style>
+    /* Journal-specific tweaks (keeps existing theme) */
+    .journalGrid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap: 16px;
+      margin-top: 14px;
+    }
+    @media (max-width: 980px){
+      .journalGrid{ grid-template-columns: 1fr; }
+    }
+    .listCard{ padding: 14px; }
+    .pageRow{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+      padding: 10px 10px;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 14px;
+      background: rgba(0,0,0,.16);
+      cursor:pointer;
+    }
+    .pageRow:hover{ background: rgba(0,0,0,.22); }
+    .pageRow.active{ outline: 2px solid rgba(255,255,255,.18); }
+    .pageMeta{ display:flex; flex-direction:column; gap:2px; min-width:0; }
+    .pageTitle{ font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .pageSub{ font-size:12px; color: var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .iconBtn{
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+    }
+    .iconBtn:hover{ background: rgba(0,0,0,.28); }
+    .fieldRow{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px){ .fieldRow{ grid-template-columns: 1fr; } }
+    textarea.journalBody{
+      width:100%;
+      min-height: 320px;
+      resize: vertical;
+      border-radius: 18px;
+      padding: 12px 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline: none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    input.jInput, select.jSelect{
+      width:100%;
+      border-radius: 14px;
+      padding: 10px 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+    }
+    .statsBar{
+      display:flex;
+      flex-wrap: wrap;
+      gap:10px;
+      margin-top: 10px;
+    }
+    .statChip{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      padding: 10px 12px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      box-shadow: var(--shadow2);
+      font-weight:900;
+    }
+    .statChip span{
+      font-weight:800;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .tiny{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="authTools" aria-label="Account">
+    <button class="pillBtn authBtn" id="btnGoogle" type="button" title="Sign in with Google"><span class="dot"></span> Sign in</button>
+    <button class="pillBtn authBtn" id="btnLogout" type="button" title="Sign out" style="display:none;"><span class="dot"></span> Logout</button>
+  </div>
+
+  <div class="stars"></div>
+
+  <div class="wrap">
+    <header>
+      <h1>Pacia’s Journal</h1>
+      <p class="sub">Write it down, then connect how you feel to sleep, water, and calories.</p>
+
+      <div class="topTools">
+        <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+        <a class="pillBtn" href="pacia-exercise.html" title="Movement"><span class="dot"></span> Movement</a>
+        <a class="pillBtn" href="pacia-recipes.html" title="Recipes"><span class="dot"></span> Recipes</a>
+        <a class="pillBtn" href="pacia-food.html" title="Food log"><span class="dot"></span> Food Log</a>
+      </div>
+    </header>
+
+    <div class="journalGrid">
+      <!-- LEFT: pages -->
+      <div class="card listCard">
+        <div class="sectionTitle">Pages</div>
+
+        <div class="fieldRow" style="margin-top:10px;">
+          <button class="pillBtn" id="btnNewPage" type="button" title="Add a new journal page"><span class="dot"></span> New Page</button>
+          <button class="pillBtn" id="btnDeletePage" type="button" title="Delete selected page" style="opacity:.92;"><span class="dot"></span> Delete</button>
+        </div>
+
+        <div class="fieldRow" style="margin-top:12px;">
+          <input class="jInput" id="searchInput" placeholder="Search pages..." />
+          <select class="jSelect" id="filterCategory" title="Filter by category"></select>
+        </div>
+
+        <div id="pagesList" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
+
+        <div class="tiny" style="margin-top:12px;">
+          Tip: make a page for “yesterday” and you’ll still see that day’s calories/water + the sleep you logged for that morning.
+        </div>
+      </div>
+
+      <!-- RIGHT: editor -->
+      <div class="card">
+        <div class="sectionTitle">Entry</div>
+
+        <div class="fieldRow" style="margin-top:10px;">
+          <div>
+            <div class="tiny">Date</div>
+            <input class="jInput" id="entryDate" type="date" />
+          </div>
+          <div>
+            <div class="tiny">Category</div>
+            <select class="jSelect" id="entryCategory"></select>
+            <input class="jInput" id="customCategory" placeholder="Custom category..." style="display:none; margin-top:10px;" />
+          </div>
+        </div>
+
+        <div class="fieldRow" style="margin-top:12px;">
+          <div>
+            <div class="tiny">Title</div>
+            <input class="jInput" id="entryTitle" placeholder="Optional title..." />
+          </div>
+          <div>
+            <div class="tiny">Created / Updated</div>
+            <div id="stamp" class="tiny" style="padding:10px 12px; border:1px solid rgba(255,255,255,.10); border-radius:14px; background: rgba(0,0,0,.14);">
+              —
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="tiny">Journal</div>
+          <textarea class="journalBody" id="entryBody" placeholder="Write anything... (autosaves)"></textarea>
+          <div class="tiny" id="saveStatus" style="margin-top:8px;">Not saved yet.</div>
+        </div>
+
+        <div class="statsBar" id="statsBar"></div>
+
+        <div class="card" style="margin-top:14px; padding:14px;">
+          <div class="sectionTitle" style="margin-bottom:10px;">Sleep (simple log)</div>
+          <div class="tiny">Log sleep for the morning you woke up (wake date). Later we can add “sleep quality” & trends.</div>
+
+          <div class="fieldRow" style="margin-top:10px;">
+            <div>
+              <div class="tiny">Wake date</div>
+              <input class="jInput" id="sleepDate" type="date" />
+            </div>
+            <div>
+              <div class="tiny">Hours</div>
+              <div style="display:flex; gap:10px;">
+                <input class="jInput" id="sleepHours" type="number" min="0" step="1" placeholder="7" />
+                <input class="jInput" id="sleepMins" type="number" min="0" max="59" step="1" placeholder="30" />
+              </div>
+              <div class="tiny" style="margin-top:6px;">(hours) &nbsp;&nbsp; (mins)</div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="pillBtn" id="btnSaveSleep" type="button"><span class="dot"></span> Save Sleep</button>
+            <div class="tiny" id="sleepStatus" style="align-self:center;">—</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+  </div>
+
+<script>
+/* ---------------------------
+  Local storage keys (shared)
+--------------------------- */
+const KEYS = {
+  MEALS: "paciaMeals",
+  WATER: "paciaWaterLogs",
+  JOURNAL: "paciaJournalPages",
+  SLEEP: "paciaSleepLogs"
+};
+
+const $ = (sel, el=document) => el.querySelector(sel);
+
+function toast(msg){
+  const el = $("#toast");
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>el.classList.remove("show"), 2400);
+}
+
+function safeParse(str, fallback){
+  try{ return JSON.parse(str); }catch(e){ return fallback; }
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+function uid(){ return (crypto?.randomUUID?.() || ("id_"+Math.random().toString(16).slice(2)+Date.now())); }
+
+function readMeals(){
+  const v = safeParse(localStorage.getItem(KEYS.MEALS) || "[]", []);
+  return Array.isArray(v) ? v : [];
+}
+function readWaterLogs(){
+  const v = safeParse(localStorage.getItem(KEYS.WATER) || "[]", []);
+  const arr = Array.isArray(v) ? v : [];
+  return arr.map(x=>({
+    date: String(x?.date || x?.day || "").slice(0,10),
+    oz: Number(x?.oz ?? x?.amountOz ?? x?.waterOz ?? 0) || 0
+  })).filter(x=>x.date && x.oz>0);
+}
+function readSleepLogs(){
+  const v = safeParse(localStorage.getItem(KEYS.SLEEP) || "[]", []);
+  const arr = Array.isArray(v) ? v : [];
+  return arr.map(x=>({
+    date: String(x?.date || x?.wakeDate || "").slice(0,10),
+    minutes: Number(x?.minutes ?? x?.mins ?? 0) || 0,
+    quality: (x?.quality==null ? null : Number(x.quality)),
+    note: (x?.note==null ? "" : String(x.note))
+  })).filter(x=>x.date);
+}
+function writeSleepLogs(logs){
+  localStorage.setItem(KEYS.SLEEP, JSON.stringify(logs));
+}
+function readJournalPages(){
+  const v = safeParse(localStorage.getItem(KEYS.JOURNAL) || "[]", []);
+  const arr = Array.isArray(v) ? v : [];
+  return arr.map(p=>({
+    id: p?.id || uid(),
+    pageNo: Number(p?.pageNo ?? 0) || 0,
+    entryDate: String(p?.entryDate || p?.date || todayISO()).slice(0,10),
+    category: String(p?.category || "Notes"),
+    title: String(p?.title || ""),
+    content: String(p?.content || p?.body || ""),
+    createdAt: p?.createdAt || new Date().toISOString(),
+    updatedAt: p?.updatedAt || p?.createdAt || new Date().toISOString()
+  })).sort((a,b)=> (a.pageNo||0)-(b.pageNo||0));
+}
+function writeJournalPages(pages){
+  localStorage.setItem(KEYS.JOURNAL, JSON.stringify(pages));
+}
+
+function caloriesForDate(date){
+  const meals = readMeals();
+  let total = 0;
+  for (const m of meals){
+    const d = String(m?.date || m?.day || "").slice(0,10);
+    if (d !== date) continue;
+    const tk = Number(m?.totalKcal ?? m?.totalCalories ?? 0);
+    if (Number.isFinite(tk) && tk>0) { total += tk; continue; }
+    const items = Array.isArray(m?.items) ? m.items : [];
+    for (const it of items){
+      const c = Number(it?.calories ?? it?.kcal ?? 0) || 0;
+      const q = Number(it?.qty ?? it?.quantity ?? 1) || 1;
+      total += (c*q);
+    }
+  }
+  return Math.round(total);
+}
+function waterForDate(date){
+  return Math.round(readWaterLogs().filter(w=>w.date===date).reduce((s,w)=>s+w.oz,0));
+}
+function sleepForWakeDate(date){
+  const sl = readSleepLogs().find(x=>x.date===date);
+  const mins = sl?.minutes || 0;
+  const h = Math.floor(mins/60);
+  const m = mins%60;
+  return { mins, label: mins? `${h}h ${m}m` : "—" };
+}
+
+const CATEGORIES = [
+  "Pain",
+  "Stress",
+  "Tired",
+  "Anxiety",
+  "Mood",
+  "Energy",
+  "Digestion",
+  "Headache",
+  "Soreness",
+  "Cramps",
+  "Focus",
+  "Cravings",
+  "Hydration",
+  "Workout",
+  "Supplements",
+  "Notes",
+  "Other…"
+];
+
+let pages = readJournalPages();
+let selectedId = pages[0]?.id || null;
+let dirtyTimer = null;
+
+function fillCategorySelects(){
+  const filter = $("#filterCategory");
+  filter.innerHTML = "";
+  const optAll = document.createElement("option");
+  optAll.value = "All";
+  optAll.textContent = "All categories";
+  filter.appendChild(optAll);
+  for (const c of CATEGORIES){
+    if (c==="Other…") continue;
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c;
+    filter.appendChild(o);
+  }
+
+  const entry = $("#entryCategory");
+  entry.innerHTML = "";
+  for (const c of CATEGORIES){
+    const o = document.createElement("option");
+    o.value = c;
+    o.textContent = c;
+    entry.appendChild(o);
+  }
+}
+
+function getSelected(){
+  return pages.find(p=>p.id===selectedId) || null;
+}
+
+function renderPages(){
+  const q = ($("#searchInput").value || "").trim().toLowerCase();
+  const cat = $("#filterCategory").value || "All";
+  const list = $("#pagesList");
+  list.innerHTML = "";
+
+  const filtered = pages.filter(p=>{
+    const inCat = (cat==="All") ? true : (String(p.category).toLowerCase()===cat.toLowerCase());
+    const hay = `${p.pageNo} ${p.entryDate} ${p.category} ${p.title} ${p.content}`.toLowerCase();
+    const inSearch = !q || hay.includes(q);
+    return inCat && inSearch;
+  });
+
+  if (!filtered.length){
+    const empty = document.createElement("div");
+    empty.className = "tiny";
+    empty.textContent = "No pages yet — click New Page.";
+    list.appendChild(empty);
+    return;
+  }
+
+  for (const p of filtered){
+    const row = document.createElement("div");
+    row.className = "pageRow" + (p.id===selectedId ? " active" : "");
+    row.addEventListener("click", ()=>selectPage(p.id));
+
+    const meta = document.createElement("div");
+    meta.className = "pageMeta";
+
+    const title = document.createElement("div");
+    title.className = "pageTitle";
+    title.textContent = `Page ${p.pageNo || 0}` + (p.title ? ` — ${p.title}` : "");
+
+    const sub = document.createElement("div");
+    sub.className = "pageSub";
+    sub.textContent = `${p.entryDate} • ${p.category}`;
+
+    meta.appendChild(title);
+    meta.appendChild(sub);
+
+    const btn = document.createElement("button");
+    btn.className = "iconBtn";
+    btn.type = "button";
+    btn.textContent = "✎";
+    btn.title = "Select";
+    btn.addEventListener("click", (e)=>{ e.stopPropagation(); selectPage(p.id); });
+
+    row.appendChild(meta);
+    row.appendChild(btn);
+    list.appendChild(row);
+  }
+}
+
+function renderEditor(){
+  const p = getSelected();
+  const date = p?.entryDate || todayISO();
+  $("#entryDate").value = date;
+  $("#entryTitle").value = p?.title || "";
+  $("#entryBody").value = p?.content || "";
+
+  const cat = p?.category || "Notes";
+  const entrySel = $("#entryCategory");
+  const custom = $("#customCategory");
+  if (CATEGORIES.includes(cat)) {
+    entrySel.value = cat;
+    custom.style.display = (cat==="Other…") ? "" : "none";
+    if (cat!=="Other…") custom.value = "";
+  } else {
+    entrySel.value = "Other…";
+    custom.style.display = "";
+    custom.value = cat;
+  }
+
+  const created = p?.createdAt ? new Date(p.createdAt).toLocaleString() : "—";
+  const updated = p?.updatedAt ? new Date(p.updatedAt).toLocaleString() : "—";
+  $("#stamp").textContent = `Created: ${created}  |  Updated: ${updated}`;
+
+  renderStats();
+}
+
+function renderStats(){
+  const p = getSelected();
+  const date = (p?.entryDate || $("#entryDate").value || todayISO()).slice(0,10);
+
+  const oz = waterForDate(date);
+  const kcal = caloriesForDate(date);
+  const sleep = sleepForWakeDate(date);
+
+  const bar = $("#statsBar");
+  bar.innerHTML = "";
+
+  const chip = (label, value)=>{
+    const d = document.createElement("div");
+    d.className = "statChip";
+    d.innerHTML = `<span>${label}</span> ${value}`;
+    return d;
+  };
+
+  bar.appendChild(chip("Water", oz ? `${oz} oz` : "—"));
+  bar.appendChild(chip("Calories", kcal ? `${kcal} kcal` : "—"));
+  bar.appendChild(chip("Sleep (wake date)", sleep.label));
+
+  const note = document.createElement("div");
+  note.className = "tiny";
+  note.style.marginTop = "4px";
+  note.textContent = "Tip: log sleep using the morning you woke up. Example: Sunday night sleep = Monday wake date.";
+  bar.appendChild(note);
+}
+
+function selectPage(id){
+  selectedId = id;
+  renderPages();
+  renderEditor();
+  $("#saveStatus").textContent = "Loaded.";
+}
+
+function addPage(){
+  const maxNo = pages.reduce((m,p)=>Math.max(m, p.pageNo||0), 0);
+  const now = new Date().toISOString();
+  const page = {
+    id: uid(),
+    pageNo: maxNo + 1,
+    entryDate: todayISO(),
+    category: "Notes",
+    title: "",
+    content: "",
+    createdAt: now,
+    updatedAt: now
+  };
+  pages.push(page);
+  writeJournalPages(pages);
+  selectedId = page.id;
+  renderPages();
+  renderEditor();
+  $("#saveStatus").textContent = "New page created (autosave).";
+  toast("New page created");
+  saveJournalToCloudDebounced();
+}
+
+function deleteSelected(){
+  const p = getSelected();
+  if (!p) return;
+  const ok = confirm(`Delete Page ${p.pageNo}? This cannot be undone.`);
+  if (!ok) return;
+  pages = pages.filter(x=>x.id!==p.id);
+  writeJournalPages(pages);
+  selectedId = pages[0]?.id || null;
+  renderPages();
+  renderEditor();
+  toast("Page deleted");
+  saveJournalToCloudDebounced();
+}
+
+function updateSelectedFromUI(){
+  const p = getSelected();
+  if (!p) return;
+  const date = ($("#entryDate").value || todayISO()).slice(0,10);
+  const title = $("#entryTitle").value || "";
+  const body = $("#entryBody").value || "";
+
+  let cat = $("#entryCategory").value || "Notes";
+  if (cat === "Other…") {
+    cat = ($("#customCategory").value || "Other").trim() || "Other";
+  }
+
+  p.entryDate = date;
+  p.title = title;
+  p.content = body;
+  p.category = cat;
+  p.updatedAt = new Date().toISOString();
+
+  writeJournalPages(pages);
+  renderPages();
+  renderStats();
+  const created = p?.createdAt ? new Date(p.createdAt).toLocaleString() : "—";
+  const updated = p?.updatedAt ? new Date(p.updatedAt).toLocaleString() : "—";
+  $("#stamp").textContent = `Created: ${created}  |  Updated: ${updated}`;
+}
+
+function saveJournalToCloudDebounced(){
+  clearTimeout(dirtyTimer);
+  dirtyTimer = setTimeout(async ()=>{
+    $("#saveStatus").textContent = "Saving to cloud…";
+    try{
+      await saveToSupabase({ journalPages: readJournalPages(), sleepLogs: readSleepLogs() });
+      $("#saveStatus").textContent = "Saved.";
+    }catch(e){
+      $("#saveStatus").textContent = "Saved locally (cloud unavailable).";
+    }
+  }, 650);
+}
+
+function hookAutosave(){
+  const onChange = ()=>{
+    updateSelectedFromUI();
+    $("#saveStatus").textContent = "Saving…";
+    saveJournalToCloudDebounced();
+  };
+  $("#entryDate").addEventListener("change", onChange);
+  $("#entryTitle").addEventListener("input", onChange);
+  $("#entryBody").addEventListener("input", onChange);
+
+  $("#entryCategory").addEventListener("change", ()=>{
+    const v = $("#entryCategory").value;
+    $("#customCategory").style.display = (v==="Other…") ? "" : "none";
+    onChange();
+  });
+  $("#customCategory").addEventListener("input", onChange);
+
+  $("#searchInput").addEventListener("input", renderPages);
+  $("#filterCategory").addEventListener("change", renderPages);
+
+  $("#btnNewPage").addEventListener("click", addPage);
+  $("#btnDeletePage").addEventListener("click", deleteSelected);
+}
+
+function saveSleep(){
+  const date = ($("#sleepDate").value || todayISO()).slice(0,10);
+  const h = Number($("#sleepHours").value || 0) || 0;
+  const m = Number($("#sleepMins").value || 0) || 0;
+  const minutes = Math.max(0, h*60 + Math.min(59, Math.max(0,m)));
+
+  if (!date) return;
+  if (!minutes) {
+    $("#sleepStatus").textContent = "Enter hours/mins.";
+    return;
+  }
+
+  let logs = readSleepLogs();
+  const existing = logs.find(x=>x.date===date);
+  if (existing) existing.minutes = minutes;
+  else logs.push({ date, minutes, quality: null, note: "" });
+
+  writeSleepLogs(logs);
+  $("#sleepStatus").textContent = `Saved for ${date} (${Math.floor(minutes/60)}h ${minutes%60}m)`;
+  renderStats();
+  toast("Sleep saved");
+  saveJournalToCloudDebounced();
+}
+
+function init(){
+  fillCategorySelects();
+  $("#entryDate").value = todayISO();
+  $("#sleepDate").value = todayISO();
+
+  pages = readJournalPages();
+  if (!pages.length) {
+    addPage();
+  } else {
+    selectedId = pages[0].id;
+    renderPages();
+    renderEditor();
+  }
+  hookAutosave();
+  $("#btnSaveSleep").addEventListener("click", saveSleep);
+}
+
+init();
+</script>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
+  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let __cloudCache = null;
+
+  const btnGoogle = document.getElementById("btnGoogle");
+  const btnLogout = document.getElementById("btnLogout");
+
+  btnGoogle.addEventListener("click", async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
+      }
+    });
+  });
+
+  btnLogout.addEventListener("click", async () => {
+    await supabase.auth.signOut();
+    location.reload();
+  });
+
+  async function loadFromSupabase() {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return null;
+
+    const { data, error } = await supabase
+      .from("wellness_state")
+      .select("data")
+      .eq("user_id", auth.user.id)
+      .single();
+
+    if (error || !data) return null;
+    return data.data;
+  }
+
+  window.saveToSupabase = async function(payload) {
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) throw new Error("Not signed in");
+
+    let base = __cloudCache;
+    if (!base) {
+      const { data } = await supabase
+        .from("wellness_state")
+        .select("data")
+        .eq("user_id", auth.user.id)
+        .single();
+      base = data?.data || {};
+    }
+
+    const merged = { ...(base||{}), ...(payload||{}) };
+    __cloudCache = merged;
+
+    await supabase
+      .from("wellness_state")
+      .upsert({
+        user_id: auth.user.id,
+        data: merged,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+  };
+
+  async function refreshAuthUI() {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+    if (!user) {
+      btnGoogle.style.display = "";
+      btnLogout.style.display = "none";
+      return;
+    }
+    btnGoogle.style.display = "none";
+    btnLogout.style.display = "";
+  }
+
+  const cloudData = await loadFromSupabase();
+  if (cloudData) {
+    __cloudCache = cloudData;
+
+    const map = [
+      ["meals","paciaMeals"],
+      ["workoutDays","paciaWorkoutDays"],
+      ["waterLogs","paciaWaterLogs"],
+      ["recipes","paciaRecipes"],
+      ["workoutSessions","paciaWorkoutSessions"],
+      ["exerciseLibrary","paciaExerciseLibrary"],
+      ["journalPages","paciaJournalPages"],
+      ["sleepLogs","paciaSleepLogs"]
+    ];
+    for (const [k, ls] of map){
+      if (cloudData[k] !== undefined){
+        try { localStorage.setItem(ls, JSON.stringify(cloudData[k])); } catch(e){}
+      }
+    }
+
+    // After syncing, ensure UI reads the latest local state.
+    // If this is the first load after signing in, a reload keeps everything consistent.
+    // (safe because journal autosaves)
+  }
+
+  refreshAuthUI();
+</script>
+
+</body>
+</html>
