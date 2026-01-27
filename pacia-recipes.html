@@ -447,50 +447,7 @@
       font-weight: 850;
       font-size: 13px;
     }
-      /* Layout fix: prevent header pill overlap with title */
-    header{
-      display:grid;
-      grid-template-columns: 1fr auto 1fr;
-      grid-template-rows: auto auto;
-      column-gap:12px;
-      align-items:start;
-    }
-    header h1{
-      grid-column:2;
-      grid-row:1;
-      justify-self:center;
-    }
-    header .sub{
-      grid-column:2;
-      grid-row:2;
-      justify-self:center;
-    }
-    header .topTools{
-      position:static;
-      grid-column:3;
-      grid-row:1;
-      justify-self:end;
-      align-self:start;
-      margin:0;
-    }
-    @media (max-width: 900px){
-      header{
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
-      }
-      header h1, header .sub{
-        grid-column:1;
-        justify-self:center;
-      }
-      header .topTools{
-        grid-column:1;
-        grid-row:3;
-        justify-self:center;
-        margin-top:16px;
-        justify-content:center;
-      }
-    }
-</style>
+  </style>
 </head>
 
 <body>
@@ -503,6 +460,7 @@
 
       <div class="topTools">
         <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+        <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
         <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
         <button class="pillBtn" id="btnExport" type="button" title="Export recipes JSON"><span class="dot"></span> Export</button>
         <button class="pillBtn" id="btnImport" type="button" title="Import recipes JSON"><span class="dot"></span> Import</button>
@@ -1143,5 +1101,131 @@ $("#btnSave").addEventListener("click", saveRecipe);
   renderRecipeList();
 })();
 </script>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
+  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let __cloudCache = null;
+  let __saving = false;
+  let __saveTimer = null;
+
+  const LS_KEYS = {
+    meals: "paciaMeals",
+    workoutDays: "paciaWorkoutDays",
+    waterLogs: "paciaWaterLogs",
+    recipes: "paciaRecipes",
+    workoutSessions: "paciaWorkoutSessions",
+    exerciseLibrary: "paciaExerciseLibrary",
+    journalPages: "paciaJournalPages",
+    sleepLogs: "paciaSleepLogs"
+  };
+
+  const syncLsKeys = new Set(Object.values(LS_KEYS));
+
+  function safeParse(str, fallback){
+    try { return JSON.parse(str); } catch(e){ return fallback; }
+  }
+
+  function readLS(key){
+    const raw = localStorage.getItem(key);
+    if (raw == null) return undefined;
+    const val = safeParse(raw, undefined);
+    return val;
+  }
+
+  function buildPayloadFromLocal(){
+    const payload = {};
+    for (const [cloudKey, lsKey] of Object.entries(LS_KEYS)){
+      const val = readLS(lsKey);
+      if (val !== undefined) payload[cloudKey] = val;
+    }
+    return payload;
+  }
+
+  async function loadFromSupabase(){
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return null;
+
+    const { data, error } = await supabase
+      .from("wellness_state")
+      .select("data")
+      .eq("user_id", auth.user.id)
+      .single();
+
+    if (error || !data) return null;
+    return data.data;
+  }
+
+  async function saveMerged(partial){
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return;
+
+    if (__saving) return;
+    __saving = true;
+    try{
+      let base = __cloudCache;
+      if (!base){
+        const { data } = await supabase
+          .from("wellness_state")
+          .select("data")
+          .eq("user_id", auth.user.id)
+          .single();
+        base = data?.data || {};
+      }
+
+      const merged = { ...(base||{}), ...(partial||{}) };
+      __cloudCache = merged;
+
+      await supabase
+        .from("wellness_state")
+        .upsert({
+          user_id: auth.user.id,
+          data: merged,
+          updated_at: new Date().toISOString()
+        }, { onConflict: "user_id" });
+    } finally {
+      __saving = false;
+    }
+  }
+
+  // Cloud -> Local on load
+  const cloud = await loadFromSupabase();
+  if (cloud){
+    __cloudCache = cloud;
+    const map = [
+      ["meals","paciaMeals"],
+      ["workoutDays","paciaWorkoutDays"],
+      ["waterLogs","paciaWaterLogs"],
+      ["recipes","paciaRecipes"],
+      ["workoutSessions","paciaWorkoutSessions"],
+      ["exerciseLibrary","paciaExerciseLibrary"],
+      ["journalPages","paciaJournalPages"],
+      ["sleepLogs","paciaSleepLogs"]
+    ];
+    for (const [k, ls] of map){
+      if (cloud[k] !== undefined){
+        try { localStorage.setItem(ls, JSON.stringify(cloud[k])); } catch(e){}
+      }
+    }
+  }
+
+  // Debounced local -> cloud sync (captures changes without modifying your page logic)
+  const origSetItem = localStorage.setItem.bind(localStorage);
+  localStorage.setItem = function(k, v){
+    origSetItem(k, v);
+    if (!syncLsKeys.has(k)) return;
+
+    clearTimeout(__saveTimer);
+    __saveTimer = setTimeout(()=>{
+      const payload = buildPayloadFromLocal();
+      saveMerged(payload);
+    }, 700);
+  };
+</script>
+
 </body>
 </html>
