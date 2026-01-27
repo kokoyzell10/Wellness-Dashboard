@@ -453,6 +453,46 @@
       font-weight: 800;
       font-size: 13px;
     }
+      
+    /* Auth buttons (match pill UI) */
+    #btnGoogle, #btnLogout{
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      z-index: 80;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color:var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor:pointer;
+      box-shadow: var(--shadow2);
+      display:flex;
+      gap:8px;
+      align-items:center;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      font-weight: 900;
+    }
+    #btnGoogle:hover, #btnLogout:hover{
+      transform: translateY(-1px);
+      background: rgba(0,0,0,.35);
+      border-color: rgba(255,255,255,.18);
+    }
+    #btnGoogle::before, #btnLogout::before{
+      content:"";
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: var(--choc);
+      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
+      display:inline-block;
+      flex: 0 0 auto;
+    }
+    #btnLogout::before{
+      background: rgba(255,107,107,.90);
+      box-shadow: 0 0 0 6px rgba(255,107,107,.12);
+    }
+
       /* Layout fix: prevent header pill overlap with title */
     header{
       display:grid;
