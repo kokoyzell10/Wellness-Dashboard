@@ -402,9 +402,6 @@
     }
     .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
 
-    #authLabel{ font-weight:900; }
-    .pillBtn[disabled]{ opacity:.55; cursor:not-allowed; transform:none !important; }
-
     /* toast + confetti */
     .toast{
       position:fixed;
@@ -456,11 +453,57 @@
       font-weight: 800;
       font-size: 13px;
     }
-  </style>
+      /* Layout fix: prevent header pill overlap with title */
+    header{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows: auto auto;
+      column-gap:12px;
+      align-items:start;
+    }
+    header h1{
+      grid-column:2;
+      grid-row:1;
+      justify-self:center;
+    }
+    header .sub{
+      grid-column:2;
+      grid-row:2;
+      justify-self:center;
+    }
+    header .topTools{
+      position:static;
+      grid-column:3;
+      grid-row:1;
+      justify-self:end;
+      align-self:start;
+      margin:0;
+    }
+    @media (max-width: 900px){
+      header{
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+      header h1, header .sub{
+        grid-column:1;
+        justify-self:center;
+      }
+      header .topTools{
+        grid-column:1;
+        grid-row:3;
+        justify-self:center;
+        margin-top:16px;
+        justify-content:center;
+      }
+    }
+</style>
 </head>
 
 <body>
-<div class="stars"></div>
+  <button id="btnGoogle">Sign in with Google</button>
+<button id="btnLogout" style="display:none;">Logout</button>
+
+  <div class="stars"></div>
 
   <div class="wrap">
     <header>
@@ -468,13 +511,6 @@
       <p class="sub">A calm space for balance, nourishment, and movement</p>
 
       <div class="topTools">
-        <button class="pillBtn" id="btnGoogle" type="button" title="Sign in with Google">
-          <span class="dot"></span> <span id="authLabel">Sign in</span>
-        </button>
-        <button class="pillBtn" id="btnLogout" type="button" style="display:none" title="Sign out">
-          <span class="dot"></span> Sign out
-        </button>
-
         <button class="pillBtn" id="btnWorkoutTop" type="button" title="Log workout days">
           <span class="dot"></span> Log Workout Days
         </button>
@@ -747,28 +783,6 @@ const GOALS = {
 
 const $ = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-
-// Cloud sync hook (no-op by default; overwritten by the Supabase module script below)
-window.saveToSupabase = window.saveToSupabase || (async function(_payload){});
-function saveToSupabase(payload){
-  try { return window.saveToSupabase(payload); } catch(_e) { /* ignore */ }
-}
-
-// Debounced full-state sync (helps when other pages change localStorage and you return here)
-let __syncTimer = null;
-function syncAllToCloud(reason=""){
-  clearTimeout(__syncTimer);
-  __syncTimer = setTimeout(()=>{
-    saveToSupabase({
-      meals: readMeals(),
-      workoutDays: readWorkoutDays(),
-      waterLogs: readWaterLogs(),
-      _meta: { reason, at: new Date().toISOString() }
-    });
-  }, 450);
-}
-
-
 
 function todayISO(){
   const d = new Date();
@@ -1385,8 +1399,9 @@ $$(".overlay").forEach(ov=>{
 });
 
 // Refresh when coming back from other pages
-window.addEventListener("focus", ()=>{ renderAll(); syncAllToCloud("focus"); });
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ renderAll(); syncAllToCloud("visibility"); } });
+window.addEventListener("focus", ()=> renderAll());
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderAll(); });
+
 // Init
 (function init(){
   // default dates for modals
@@ -1400,36 +1415,23 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ render
 
   renderAll();
 })();
-
-  // Expose helpers to module scripts (modules don't automatically see classic-script globals by name)
-  window.renderAll = window.renderAll || renderAll;
-  window.showToast = window.showToast || showToast;
-
 </script>
  <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
   const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
+  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // Quick sanity check (Supabase anon keys are usually JWTs starting with "eyJ")
-  if (typeof SUPABASE_ANON_KEY === "string" && !SUPABASE_ANON_KEY.startsWith("eyJ")) {
-    console.warn("SUPABASE_ANON_KEY does not look like a Supabase anon key. Double-check Settings → API → anon public key.");
-  }
-
-
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
-  const authLabel = document.getElementById("authLabel");
 
   btnGoogle.addEventListener("click", async () => {
-    try { localStorage.setItem("pacia_return_to", window.location.href); } catch(_e) {}
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: new URL("auth-callback.html", window.location.href).href
+        redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
       }
     });
   });
@@ -1455,7 +1457,7 @@ async function loadFromSupabase() {
 }
 
 
-window.saveToSupabase = async function(payload) {
+saveToSupabase = async function(payload) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) return;
 
@@ -1482,36 +1484,21 @@ window.saveToSupabase = async function(payload) {
     btnLogout.style.display = "";
   }
 
-   
-  async function syncFromCloudIfSignedIn(){
-    const cloudData = await loadFromSupabase();
-    if (!cloudData) return;
-
-    // Write cloud state into the same localStorage keys the rest of the app already uses
-    if (cloudData.meals) {
-      localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
-    }
-    if (cloudData.workoutDays) {
-      localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
-    }
-    if (cloudData.waterLogs) {
-      localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
-    }
-
-    window.renderAll && window.renderAll();
+   const cloudData = await loadFromSupabase();
+if (cloudData) {
+  if (cloudData.meals) {
+    localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
   }
+  if (cloudData.workoutDays) {
+    localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
+  }
+  if (cloudData.waterLogs) {
+    localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
+  }
+  renderAll();
+}
 
-  // Keep UI + data synced across OAuth redirects and future logins/logouts
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    await refreshAuthUI();
-    if (session?.user) await syncFromCloudIfSignedIn();
-  });
-
-  // Initial paint
-  await refreshAuthUI();
-  await syncFromCloudIfSignedIn();
-
-
+  refreshAuthUI();
 </script>
 
 </body>
