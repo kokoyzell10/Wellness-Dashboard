@@ -536,14 +536,29 @@
         justify-content:center;
       }
     }
+
+    .authTools{
+      position:fixed;
+      left:16px;
+      top:14px;
+      z-index:60;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .authBtn{ padding:10px 12px; }
+    @media (max-width: 900px){
+      .authTools{ position:static; margin: 12px auto 0; justify-content:center; }
+    }
 </style>
 </head>
 
 <body>
-  <button id="btnGoogle">Sign in with Google</button>
-<button id="btnLogout" style="display:none;">Logout</button>
-
-  <div class="stars"></div>
+  <div class="authTools" aria-label="Account">
+    <button class="pillBtn authBtn" id="btnGoogle" type="button" title="Sign in with Google"><span class="dot"></span> Sign in</button>
+    <button class="pillBtn authBtn" id="btnLogout" type="button" title="Sign out" style="display:none;"><span class="dot"></span> Logout</button>
+  </div>
+<div class="stars"></div>
 
   <div class="wrap">
     <header>
@@ -551,6 +566,7 @@
       <p class="sub">A calm space for balance, nourishment, and movement</p>
 
       <div class="topTools">
+        <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
         <button class="pillBtn" id="btnWorkoutTop" type="button" title="Log workout days">
           <span class="dot"></span> Log Workout Days
         </button>
@@ -1460,9 +1476,11 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
   const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
+  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let __cloudCache = null;
 
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
@@ -1501,11 +1519,25 @@ saveToSupabase = async function(payload) {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth?.user) return;
 
+  // Merge with last known cloud snapshot so we don't wipe keys from other pages (journal, recipes, etc.)
+  let base = __cloudCache;
+  if (!base){
+    const { data } = await supabase
+      .from("wellness_state")
+      .select("data")
+      .eq("user_id", auth.user.id)
+      .single();
+    base = data?.data || {};
+  }
+
+  const merged = { ...(base || {}), ...(payload || {}) };
+  __cloudCache = merged;
+
   await supabase
     .from("wellness_state")
     .upsert({
       user_id: auth.user.id,
-      data: payload,
+      data: merged,
       updated_at: new Date().toISOString()
     }, { onConflict: "user_id" });
 };
@@ -1526,19 +1558,28 @@ saveToSupabase = async function(payload) {
 
    const cloudData = await loadFromSupabase();
 if (cloudData) {
-  if (cloudData.meals) {
-    localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
+  __cloudCache = cloudData;
+
+  // Apply cloud → local (so all pages/devices stay consistent)
+  const map = [
+    ["meals","paciaMeals"],
+    ["workoutDays","paciaWorkoutDays"],
+    ["waterLogs","paciaWaterLogs"],
+    ["recipes","paciaRecipes"],
+    ["workoutSessions","paciaWorkoutSessions"],
+    ["exerciseLibrary","paciaExerciseLibrary"],
+    ["journalPages","paciaJournalPages"],
+    ["sleepLogs","paciaSleepLogs"]
+  ];
+  for (const [k, ls] of map){
+    if (cloudData[k] !== undefined){
+      try { localStorage.setItem(ls, JSON.stringify(cloudData[k])); } catch(e){}
+    }
   }
-  if (cloudData.workoutDays) {
-    localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
-  }
-  if (cloudData.waterLogs) {
-    localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
-  }
+
   renderAll();
 }
-
-  refreshAuthUI();
+refreshAuthUI();
 </script>
 
 </body>
