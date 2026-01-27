@@ -447,7 +447,50 @@
       font-weight: 850;
       font-size: 13px;
     }
-  </style>
+      /* Layout fix: prevent header pill overlap with title */
+    header{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows: auto auto;
+      column-gap:12px;
+      align-items:start;
+    }
+    header h1{
+      grid-column:2;
+      grid-row:1;
+      justify-self:center;
+    }
+    header .sub{
+      grid-column:2;
+      grid-row:2;
+      justify-self:center;
+    }
+    header .topTools{
+      position:static;
+      grid-column:3;
+      grid-row:1;
+      justify-self:end;
+      align-self:start;
+      margin:0;
+    }
+    @media (max-width: 900px){
+      header{
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+      header h1, header .sub{
+        grid-column:1;
+        justify-self:center;
+      }
+      header .topTools{
+        grid-column:1;
+        grid-row:3;
+        justify-self:center;
+        margin-top:16px;
+        justify-content:center;
+      }
+    }
+</style>
 </head>
 
 <body>
@@ -625,71 +668,6 @@ const KEYS = {
 const $ = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 
-
-// Cloud sync hook (no-op by default; overwritten by the Supabase module script below)
-window.saveToSupabase = window.saveToSupabase || (async function(_payload){});
-function saveToSupabase(payload){
-  try { return window.saveToSupabase(payload); } catch(_e) { /* ignore */ }
-}
-
-// Dashboard-compatible storage readers (so cloud writes don't wipe other data)
-const STORAGE = {
-  mealsKeys: ["paciaMeals","pacia_meals","paciaFoodMeals","pacia_food_meals","pacia.meals","paciaMealsV1"],
-  workoutDaysKey: "paciaWorkoutDays",
-  waterLogsKey: "paciaWaterLogs",
-  workoutSessionsKey: "paciaWorkoutSessions",
-  exerciseLibraryKey: "paciaExerciseLibrary",
-  recipesKey: "paciaRecipes"
-};
-
-function readMeals(){
-  for(const k of STORAGE.mealsKeys){
-    const raw = localStorage.getItem(k);
-    if(!raw) continue;
-    const val = safeParse(raw, null);
-    if(Array.isArray(val)) return val;
-    if(val && Array.isArray(val.meals)) return val.meals;
-  }
-  return [];
-}
-function readWorkoutDays(){
-  const v = safeParse(localStorage.getItem(STORAGE.workoutDaysKey) || "[]", []);
-  return Array.isArray(v) ? v : [];
-}
-function readWaterLogs(){
-  const v = safeParse(localStorage.getItem(STORAGE.waterLogsKey) || "[]", []);
-  return Array.isArray(v) ? v : [];
-}
-function readWorkoutSessions(){
-  const v = safeParse(localStorage.getItem(STORAGE.workoutSessionsKey) || "[]", []);
-  return Array.isArray(v) ? v : [];
-}
-function readExerciseLibrary(){
-  const v = safeParse(localStorage.getItem(STORAGE.exerciseLibraryKey) || "[]", []);
-  return Array.isArray(v) ? v : [];
-}
-function readRecipes(){
-  const v = safeParse(localStorage.getItem(STORAGE.recipesKey) || "[]", []);
-  return Array.isArray(v) ? v : [];
-}
-
-let __syncTimer = null;
-function syncAllToCloud(reason=""){
-  clearTimeout(__syncTimer);
-  __syncTimer = setTimeout(()=>{
-    saveToSupabase({
-      meals: readMeals(),
-      workoutDays: readWorkoutDays(),
-      waterLogs: readWaterLogs(),
-      workoutSessions: readWorkoutSessions(),
-      exerciseLibrary: readExerciseLibrary(),
-      recipes: readRecipes(),
-      _meta: { reason, at: new Date().toISOString(), page: "recipes" }
-    });
-  }, 450);
-}
-
-
 function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
 function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
 function uid(){ return (crypto?.randomUUID?.() || ("r_"+Math.random().toString(16).slice(2)+"_"+Date.now())); }
@@ -716,7 +694,6 @@ function readRecipesRaw(){
     // normalize legacy shape then persist to modern
     const migrated = legacy.map(r => normalizeLegacyRecipe(r));
     localStorage.setItem(KEYS.RECIPES, JSON.stringify(migrated));
-    syncAllToCloud("migrateLegacyRecipes");
     return migrated;
   }
   return [];
@@ -724,7 +701,6 @@ function readRecipesRaw(){
 
 function writeRecipes(list){
   localStorage.setItem(KEYS.RECIPES, JSON.stringify(list));
-  syncAllToCloud("writeRecipes");
 }
 
 /* legacy from old file:
@@ -1013,7 +989,6 @@ function readMeals(){
 }
 function writeMeals(meals){
   localStorage.setItem(KEYS.MEALS, JSON.stringify(meals));
-  syncAllToCloud("writeMeals");
 }
 
 function openOverlay(id){
@@ -1160,9 +1135,6 @@ $("#btnAddIngredient").addEventListener("click", ()=> addIngredientRow("", 1, 0)
 $("#btnReset").addEventListener("click", resetEditor);
 $("#btnSave").addEventListener("click", saveRecipe);
 
-// Expose for cloud sync (no behavior change)
-window.renderRecipeList = window.renderRecipeList || renderRecipeList;
-
 // Start
 (function init(){
   // Ensure at least one row in editor
@@ -1171,84 +1143,5 @@ window.renderRecipeList = window.renderRecipeList || renderRecipeList;
   renderRecipeList();
 })();
 </script>
-
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Quick sanity check (Supabase anon keys are usually JWTs starting with "eyJ")
-  if (typeof SUPABASE_ANON_KEY === "string" && !SUPABASE_ANON_KEY.startsWith("eyJ")) {
-    console.warn("SUPABASE_ANON_KEY does not look like a Supabase anon key. Double-check Settings → API → anon public key.");
-  }
-
-  async function loadFromSupabase() {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  // Exposed hook: classic-script calls window.saveToSupabase(payload)
-  window.saveToSupabase = async function(payload) {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return;
-
-    await supabase
-      .from("wellness_state")
-      .upsert({
-        user_id: auth.user.id,
-        data: payload,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-  };
-
-  async function syncFromCloudIfSignedIn(){
-    const cloudData = await loadFromSupabase();
-    if (!cloudData) return;
-
-    // Write cloud state into the same localStorage keys the rest of the app already uses
-    if (cloudData.meals) {
-      localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
-    }
-    if (cloudData.workoutDays) {
-      localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
-    }
-    if (cloudData.waterLogs) {
-      localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
-    }
-    if (cloudData.workoutSessions) {
-      localStorage.setItem("paciaWorkoutSessions", JSON.stringify(cloudData.workoutSessions));
-    }
-    if (cloudData.exerciseLibrary) {
-      localStorage.setItem("paciaExerciseLibrary", JSON.stringify(cloudData.exerciseLibrary));
-    }
-    if (cloudData.recipes) {
-      localStorage.setItem("paciaRecipes", JSON.stringify(cloudData.recipes));
-    }
-
-    // Re-render recipe list if available
-    window.renderRecipeList && window.renderRecipeList();
-  }
-
-  // Keep data synced across logins/logouts
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    if (session?.user) await syncFromCloudIfSignedIn();
-  });
-
-  // Initial sync
-  await syncFromCloudIfSignedIn();
-</script>
-
 </body>
 </html>
