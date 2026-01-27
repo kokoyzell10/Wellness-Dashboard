@@ -3,27 +3,27 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pacia – Recipes</title>
-
+  <title>Pacia - Food Log</title>
   <style>
     :root{
-      /* Pacia premium theme */
+      /* Match Pacia dashboard theme */
       --bg0:#070606;
       --bg1:#0e0b0a;
       --card:#141111cc;
       --card2:#171312cc;
       --stroke:rgba(255,255,255,.10);
       --soft:rgba(255,255,255,.06);
-
       --text:#f6f1ee;
       --muted:rgba(246,241,238,.70);
       --muted2:rgba(246,241,238,.50);
 
       --choc:#5a3226;
       --choc2:#7a4634;
+      --chocGlow:rgba(122,70,52,.35);
 
       --good:#59d38c;
       --warn:#ffcf6b;
+      --bad:#ff6b6b;
 
       --r:26px;
       --shadow: 0 24px 70px rgba(0,0,0,.55);
@@ -47,7 +47,7 @@
       overflow-x:hidden;
     }
 
-    /* subtle animated stars */
+    /* subtle animated stars (safe + lightweight, same spirit as dashboard) */
     .stars, .stars::before, .stars::after{
       position:fixed; inset:0;
       content:"";
@@ -144,7 +144,6 @@
       font-weight:900;
       text-decoration:none;
       user-select:none;
-      white-space:nowrap;
     }
     .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
     .pillBtn:active{ transform: translateY(0px) scale(.99); }
@@ -215,7 +214,11 @@
     }
 
     .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 560px){ .row2{ grid-template-columns: 1fr; } }
+    .row3{ display:grid; grid-template-columns: 1.1fr .5fr .6fr; gap: 10px; align-items:end; }
+    @media (max-width: 560px){
+      .row2{ grid-template-columns: 1fr; }
+      .row3{ grid-template-columns: 1fr; }
+    }
 
     .btnRow{ display:flex; gap: 10px; margin-top: 14px; justify-content:flex-end; flex-wrap:wrap; }
     .btn{
@@ -240,10 +243,11 @@
     }
     .btn.primary:hover{ background: linear-gradient(180deg, #8a5643, var(--choc2)); }
     .btn.danger{
+      border-color: rgba(255,255,255,.14);
       background: rgba(255,107,107,.12);
       color: #ffd9d9;
     }
-    .btn.danger:hover{ background: rgba(255,107,107,.18); }
+    .btn.danger:hover{ background: rgba(255,107,107,.18); border-color: rgba(255,255,255,.20); }
 
     .panelInner{
       border:1px solid var(--stroke);
@@ -253,105 +257,65 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
     }
 
-    .hint{
-      color: var(--muted2);
-      font-weight: 850;
-      font-size: 12px;
-      margin-top: 10px;
-      line-height:1.35;
-    }
-    .chip{
-      padding: 6px 10px;
-      border-radius: 999px;
+    /* Suggestions dropdown */
+    .autoWrap{ position:relative; }
+    .suggestions{
+      position:absolute;
+      top: calc(100% + 8px);
+      left:0; right:0;
+      background: rgba(12,10,10,.98);
       border:1px solid rgba(255,255,255,.14);
-      background: rgba(90,50,38,.25);
-      color: var(--text);
-      font-weight: 900;
-      font-size: 12px;
-      white-space:nowrap;
+      border-radius: 16px;
+      box-shadow: var(--shadow2);
+      max-height: 220px;
+      overflow:auto;
+      z-index: 30;
+      display:none;
+      backdrop-filter: blur(10px);
     }
+    .suggItem{
+      padding: 10px 12px;
+      cursor:pointer;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-weight: 850;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .suggItem:last-child{ border-bottom:none; }
+    .suggItem:hover{ background: rgba(255,255,255,.06); }
+    .sLeft{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sRight{ color: rgba(246,241,238,.75); font-weight:900; }
 
-    /* ingredient rows */
-    .ingredientRow{
-      display:grid;
-      grid-template-columns: 1.6fr .7fr .9fr auto;
-      gap: 10px;
+    /* Food items list */
+    .foodLine{
+      display:flex;
+      justify-content:space-between;
       align-items:center;
+      gap:12px;
       padding: 10px 10px;
-      border-radius: 18px;
+      border-radius: 16px;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(0,0,0,.16);
       margin-top: 10px;
     }
-    @media (max-width: 820px){
-      .ingredientRow{
-        grid-template-columns: 1fr 1fr;
-        grid-auto-rows: auto;
-      }
-      .ingredientRow .kill{ grid-column: 2; justify-self:end; }
-    }
-    .kill{
-      border:none;
-      background: transparent;
-      color: rgba(255,255,255,.75);
-      font-weight: 950;
-      cursor:pointer;
-      padding: 10px;
-      border-radius: 12px;
-      transition: background .12s ease, transform .12s ease;
-    }
-    .kill:hover{ background: rgba(255,255,255,.06); transform: translateY(-1px); }
-    .kill:active{ transform: translateY(0px) scale(.99); }
-
-    .summaryLine{
-      margin-top: 12px;
+    .foodMeta{
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 12px 14px;
-      border-radius: 18px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      font-weight: 950;
-    }
-    .summaryLine span:last-child{
-      background: rgba(122,70,52,.18);
-      border:1px solid rgba(255,255,255,.10);
-      padding: 8px 10px;
-      border-radius: 999px;
-      white-space:nowrap;
-    }
-
-    /* saved recipes */
-    .recipeCard{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.16);
-      border-radius: 18px;
-      padding: 14px;
-      margin-top: 12px;
-    }
-    .recipeTop{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:10px;
-    }
-    .recipeName{
-      margin:0;
-      font-size: 18px;
-      font-weight: 950;
+      flex-direction:column;
+      gap:4px;
       min-width:0;
+    }
+    .foodName{
+      font-weight: 950;
       overflow:hidden;
       text-overflow:ellipsis;
       white-space:nowrap;
     }
-    .recipeMeta{
-      margin-top: 6px;
+    .foodSub{
       color: var(--muted2);
       font-weight: 850;
-      font-size: 12px;
-      line-height:1.35;
+      font-size: 13px;
+      line-height:1.2;
     }
     .kcalPill{
       padding: 8px 10px;
@@ -362,15 +326,120 @@
       color: rgba(246,241,238,.95);
       white-space:nowrap;
     }
-    .recipeActions{
-      margin-top: 12px;
+    .xIcon{
+      border:none;
+      background: transparent;
+      color: rgba(255,255,255,.75);
+      font-weight: 950;
+      cursor:pointer;
+      padding: 10px;
+      border-radius: 12px;
+      transition: background .12s ease, transform .12s ease;
+    }
+    .xIcon:hover{ background: rgba(255,255,255,.06); transform: translateY(-1px); }
+    .xIcon:active{ transform: translateY(0px) scale(.99); }
+
+    .totalLine{
+      margin-top: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      font-weight: 950;
+    }
+    .totalLine span:last-child{
+      color: rgba(246,241,238,.95);
+      background: rgba(122,70,52,.18);
+      border:1px solid rgba(255,255,255,.10);
+      padding: 8px 10px;
+      border-radius: 999px;
+    }
+
+    /* Right column: summary ring */
+    .ringCard{
+      padding: 18px;
+      border-radius: 22px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
+      display:flex;
+      flex-direction:column;
+      gap: 12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .ringRow{
+      display:flex;
+      gap: 14px;
+      align-items:center;
+    }
+    .ringWrap{ width: 130px; height: 130px; position:relative; flex:0 0 auto; }
+    .ringSvg{ width:100%; height:100%; transform: rotate(-90deg); }
+    .ringBg{ stroke: rgba(255,255,255,.12); stroke-width: 14; fill:none; }
+    .ringFg{ stroke: var(--choc2); stroke-width: 14; fill:none; stroke-linecap: round; filter: drop-shadow(0 0 10px rgba(122,70,52,.25)); }
+    .ringNum{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-weight: 950;
+      font-size: 28px;
+      letter-spacing:.2px;
+      color: var(--text);
+      text-shadow: 0 10px 30px rgba(0,0,0,.6);
+    }
+    .summaryMeta{ min-width:0; }
+    .summaryBig{ font-size: 22px; font-weight: 950; margin:0; }
+    .summarySub{ margin:6px 0 0; color: var(--muted); font-weight: 850; font-size: 13px; line-height:1.35; }
+
+    .mealCard{
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+    }
+    .mealTop{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      font-weight: 950;
+    }
+    .mealTop .left{
+      min-width:0;
+    }
+    .mealType{
+      font-size: 16px;
+      font-weight: 950;
+      margin:0;
+    }
+    .mealSmall{
+      margin-top: 6px;
+      color: var(--muted2);
+      font-weight: 850;
+      font-size: 12px;
+      line-height:1.35;
+    }
+    .mealKcal{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(90,50,38,.22);
+      white-space:nowrap;
+    }
+    .mealActions{
+      margin-top: 10px;
       display:flex;
       gap: 10px;
       flex-wrap:wrap;
       justify-content:flex-end;
     }
-
-    details{ margin-top: 10px; }
+    details{
+      margin-top: 8px;
+    }
     summary{
       cursor:pointer;
       color: rgba(246,241,238,.85);
@@ -378,8 +447,36 @@
       user-select:none;
     }
     summary:hover{ text-decoration: underline; }
+    .itemsList{
+      margin-top: 8px;
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .itemLine{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding: 8px 10px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
+      font-weight: 850;
+      color: rgba(246,241,238,.92);
+    }
+    .itemLine span:first-child{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .itemLine span:last-child{
+      white-space:nowrap;
+      color: rgba(246,241,238,.78);
+      font-weight: 900;
+    }
 
-    /* modal + toast */
+    /* modal */
     .overlay{
       position:fixed; inset:0;
       background: rgba(0,0,0,.60);
@@ -419,6 +516,8 @@
       line-height:1.35;
       margin-top: 6px;
     }
+
+    /* toast + confetti */
     .toast{
       position:fixed;
       left:50%;
@@ -440,12 +539,53 @@
     .toast.show{ display:block; animation: pop .20s ease; }
     @keyframes pop{ from{ transform: translateX(-50%) translateY(8px); opacity:0 } to{ transform: translateX(-50%) translateY(0); opacity:1 } }
 
+    .confetti{
+      position:fixed; inset:0;
+      pointer-events:none;
+      z-index: 75;
+      overflow:hidden;
+      display:none;
+    }
+    .confetti.show{ display:block; }
+    .confetti i{
+      position:absolute;
+      top:-20px;
+      width:10px; height:16px;
+      border-radius: 4px;
+      opacity:.9;
+      animation: fall 1.4s linear forwards;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.35));
+    }
+    @keyframes fall{
+      to{
+        transform: translateY(calc(100vh + 40px)) rotate(220deg);
+        opacity:.95;
+      }
+    }
+
     footer{
       margin-top: 22px;
       color: var(--muted2);
       text-align:center;
       font-weight: 850;
       font-size: 13px;
+    }
+
+    .hint{
+      color: var(--muted2);
+      font-weight: 850;
+      font-size: 12px;
+      margin-top: 10px;
+      line-height:1.35;
+    }
+    .chip{
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(90,50,38,.25);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 12px;
     }
       /* Layout fix: prevent header pill overlap with title */
     header{
@@ -498,95 +638,115 @@
 
   <div class="wrap">
     <header>
-      <h1>Pacia’s Recipes</h1>
-      <p class="sub">Build recipes once — then log servings in one click</p>
+      <h1>Pacia’s Food Log</h1>
+      <p class="sub">Meals, nourishment, and calorie tracking — saved locally & private</p>
 
       <div class="topTools">
-        <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
-        <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
-        <button class="pillBtn" id="btnExport" type="button" title="Export recipes JSON"><span class="dot"></span> Export</button>
-        <button class="pillBtn" id="btnImport" type="button" title="Import recipes JSON"><span class="dot"></span> Import</button>
-        <input id="importFile" type="file" accept="application/json" style="display:none">
+        <a class="pillBtn" href="./" title="Back to dashboard">
+          <span class="dot"></span> Back
+        </a>
+        <button class="pillBtn" id="btnManageFoods" type="button" title="Edit your saved foods">
+          <span class="dot"></span> Manage Foods
+        </button>
+        <button class="pillBtn" id="btnBarcode" type="button" title="Enter barcode / quick add">
+          <span class="dot"></span> Barcode / Quick Add
+        </button>
       </div>
     </header>
 
     <div class="grid">
-      <!-- LEFT: create/edit recipe -->
+      <!-- LEFT: Add meal -->
       <div class="card">
-        <div class="sectionTitle" id="editorTitle">Create Recipe</div>
-
-        <label for="recipeName">Recipe Name</label>
-        <input id="recipeName" placeholder="e.g. Protein oats"/>
+        <div class="sectionTitle">Add Meal</div>
 
         <div class="row2">
           <div>
-            <label for="servings">Servings (recipe makes)</label>
-            <input id="servings" type="number" min="1" step="1" value="5"/>
+            <label for="mealDate">Meal Date</label>
+            <input id="mealDate" type="date"/>
           </div>
           <div>
-            <label for="recipeNotes">Notes (optional)</label>
-            <input id="recipeNotes" placeholder="e.g. 2 mins microwave"/>
-          </div>
-        </div>
-
-        <div style="height:10px"></div>
-
-        <div class="panelInner">
-          <div class="miniTitle">Ingredients</div>
-          <div id="ingredients"></div>
-
-          <div class="btnRow" style="justify-content:flex-start; margin-top:12px">
-            <button class="btn" id="btnAddIngredient" type="button">+ Add Ingredient</button>
-          </div>
-
-          <div class="summaryLine">
-            <span>Total Calories</span>
-            <span id="totalCalories">0 kcal</span>
-          </div>
-          <div class="summaryLine">
-            <span>Per Serving</span>
-            <span id="perServing">0 kcal</span>
-          </div>
-
-          <div class="hint">
-            Tip: In “Calories”, enter calories for <b>one unit</b> of the ingredient. Total = Qty × Calories.
-          </div>
-        </div>
-
-        <div class="btnRow">
-          <button class="btn" id="btnReset" type="button">Reset</button>
-          <button class="btn primary" id="btnSave" type="button">Save Recipe</button>
-        </div>
-
-        <div class="hint">
-          Storage keys: <span class="chip">paciaRecipes</span> for recipes, and logging uses <span class="chip">paciaMeals</span>.
-        </div>
-      </div>
-
-      <!-- RIGHT: saved recipes -->
-      <div class="card">
-        <div class="sectionTitle">Saved Recipes</div>
-
-        <div class="row2">
-          <div>
-            <label for="search">Search</label>
-            <input id="search" placeholder="Type to filter recipes..."/>
-          </div>
-          <div>
-            <label for="sort">Sort</label>
-            <select id="sort">
-              <option value="recent">Most recent</option>
-              <option value="name">Name (A–Z)</option>
-              <option value="kcal">Per serving (high→low)</option>
+            <label for="mealType">Meal Type</label>
+            <select id="mealType">
+              <option>Breakfast</option>
+              <option>Lunch</option>
+              <option>Dinner</option>
+              <option>Snack</option>
             </select>
           </div>
         </div>
 
-        <div style="height:10px"></div>
+        <label>Add Food</label>
+        <div class="row3">
+          <div class="autoWrap">
+            <input id="foodName" placeholder="e.g. chicken breast" autocomplete="off"/>
+            <div class="suggestions" id="suggestions"></div>
+          </div>
+
+          <div>
+            <input id="foodQty" type="number" min="0.25" step="0.25" value="1"/>
+            <div class="hint" style="margin-top:8px">Qty</div>
+          </div>
+
+          <button class="btn primary" id="btnAddFood" type="button">Add</button>
+        </div>
+
+        <div class="hint">
+          Tip: If a food isn’t recognized, you’ll be asked for calories <b>per serving</b>, and it will be saved for next time.
+        </div>
+
+        <div style="height:14px"></div>
 
         <div class="panelInner">
-          <div id="recipeList"></div>
-          <div class="hint" id="emptyHint" style="display:none">No recipes yet — create your first one on the left.</div>
+          <div class="miniTitle">Current Meal Items</div>
+          <div id="foodList"></div>
+
+          <div class="totalLine">
+            <span>Total (this meal)</span>
+            <span id="totalCalories">0 kcal</span>
+          </div>
+        </div>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" rows="3" placeholder="Optional notes..."></textarea>
+
+        <div class="btnRow">
+          <button class="btn" id="btnClearMeal" type="button">Clear</button>
+          <button class="btn primary" id="btnSaveMeal" type="button">Save Meal</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Daily summary + history -->
+      <div class="card">
+        <div class="sectionTitle">Day View</div>
+
+        <div class="ringCard">
+          <div class="ringRow">
+            <div class="ringWrap">
+              <svg class="ringSvg" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="ringBg" cx="60" cy="60" r="46"></circle>
+                <circle class="ringFg" cx="60" cy="60" r="46" stroke-dasharray="289" stroke-dashoffset="289"></circle>
+              </svg>
+              <div class="ringNum" id="dayTotalKcal">0</div>
+            </div>
+
+            <div class="summaryMeta">
+              <p class="summaryBig" id="dayTitle">Today</p>
+              <p class="summarySub" id="daySub">Total calories for the selected date.</p>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <span class="chip" id="goalChip">Goal 2500 kcal</span>
+                <span class="chip" id="mealCountChip">0 meals</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hint" id="goalHint">Hit your goal? You’ll see a little celebration 🥳</div>
+        </div>
+
+        <div style="height:14px"></div>
+
+        <div class="panelInner">
+          <div class="miniTitle">Meals for Selected Date</div>
+          <div id="mealHistory"></div>
         </div>
       </div>
     </div>
@@ -594,395 +754,143 @@
     <footer>Pacia • Local & Private • Works offline in your browser</footer>
   </div>
 
-  <!-- Add to Log modal -->
-  <div class="overlay" id="addOverlay" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+  <!-- Manage foods modal -->
+  <div class="overlay" id="foodsOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="foodsTitle">
       <div class="modalTop">
         <div>
-          <h3 id="addTitle">Add Recipe to Log</h3>
-          <div class="help">This writes into <b>paciaMeals</b> so the dashboard & food log stay consistent.</div>
+          <h3 id="foodsTitle">Manage Foods</h3>
+          <div class="help">Edit calories per serving for your saved foods. This stays on your device only.</div>
         </div>
-        <button class="x" type="button" data-close="addOverlay">✕</button>
+        <button class="x" type="button" data-close="foodsOverlay">✕</button>
       </div>
 
-      <div class="panelInner">
-        <div class="miniTitle" id="addRecipeName">Recipe</div>
+      <label for="foodSearch">Search</label>
+      <input id="foodSearch" placeholder="Type to search foods..."/>
 
-        <div class="row2">
-          <div>
-            <label for="addDate">Date</label>
-            <input id="addDate" type="date"/>
-          </div>
-          <div>
-            <label for="addMealType">Meal Type</label>
-            <select id="addMealType">
-              <option>Breakfast</option>
-              <option>Lunch</option>
-              <option>Dinner</option>
-              <option>Snack</option>
-              <option>Recipe</option>
-            </select>
-          </div>
-        </div>
+      <div style="height:12px"></div>
 
-        <div class="row2">
-          <div>
-            <label for="addServings">Servings to add</label>
-            <input id="addServings" type="number" min="0.25" step="0.25" value="1"/>
-          </div>
-          <div>
-            <label for="addNotes">Notes</label>
-            <input id="addNotes" placeholder="Optional note..."/>
-          </div>
-        </div>
-
-        <div class="summaryLine">
-          <span>Calories added</span>
-          <span id="addKcal">0 kcal</span>
-        </div>
-
-        <div class="hint">
-          Logged item uses: qty = servings, calories = per-serving kcal.
-        </div>
+      <div class="panelInner" style="max-height: 360px; overflow:auto">
+        <div id="foodsList"></div>
       </div>
 
       <div class="btnRow">
-        <button class="btn" type="button" data-close="addOverlay">Cancel</button>
-        <button class="btn primary" id="btnConfirmAdd" type="button">Add to Log</button>
+        <button class="btn" type="button" data-close="foodsOverlay">Close</button>
       </div>
     </div>
   </div>
 
+  <!-- Barcode / quick add modal -->
+  <div class="overlay" id="barcodeOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="barcodeTitle">
+      <div class="modalTop">
+        <div>
+          <h3 id="barcodeTitle">Barcode / Quick Add</h3>
+          <div class="help">Offline version: enter a barcode (or any code) + food name + calories per serving. It saves to your foods list.</div>
+        </div>
+        <button class="x" type="button" data-close="barcodeOverlay">✕</button>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="barCode">Barcode / Code</label>
+          <input id="barCode" placeholder="e.g. 0123456789"/>
+        </div>
+        <div>
+          <label for="barName">Food Name</label>
+          <input id="barName" placeholder="e.g. greek yogurt"/>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div>
+          <label for="barKcal">Calories (per serving)</label>
+          <input id="barKcal" type="number" min="0" step="1" placeholder="e.g. 120"/>
+        </div>
+        <div>
+          <label for="barAlias">Optional alias key</label>
+          <input id="barAlias" placeholder="e.g. yogurt cup"/>
+        </div>
+      </div>
+
+      <div class="btnRow">
+        <button class="btn" type="button" data-close="barcodeOverlay">Cancel</button>
+        <button class="btn primary" id="saveBarcode" type="button">Save to Foods</button>
+      </div>
+
+      <div class="hint">Note: This is a local helper. No camera scanning in offline standalone mode.</div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
+  <div class="confetti" id="confetti"></div>
 
 <script>
-/* ----------------------------
-   Keys (verified for dashboard compatibility)
+/* ---------------------------
+   Storage (kept compatible with Pacia dashboard)
+   Dashboard reads paciaMeals + others; we save in paciaMeals with fields it understands.
 ---------------------------- */
 const KEYS = {
-  RECIPES: "paciaRecipes",
-  RECIPES_LEGACY: "pacia-recipes",  // legacy from older file
-  MEALS: "paciaMeals"               // used by food log + dashboard
+  MEALS: "paciaMeals",
+  FOOD_DB: "paciaFoodDB",
+  BARCODE_DB: "paciaBarcodeDB"
+};
+
+const GOALS = {
+  caloriesPerDay: 2500
 };
 
 const $ = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 
-function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
-function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
-function uid(){ return (crypto?.randomUUID?.() || ("r_"+Math.random().toString(16).slice(2)+"_"+Date.now())); }
-function n(x){ const v = Number(x); return Number.isFinite(v) ? v : 0; }
-function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-function toast(msg){
-  const t = $("#toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(()=>t.classList.remove("show"), 2400);
+function todayISO(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d.toISOString().slice(0,10);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function safeParse(str, fallback){
+  try { return JSON.parse(str); } catch { return fallback; }
+}
+function uid(){
+  if (crypto && crypto.randomUUID) return crypto.randomUUID();
+  return "m_" + Math.random().toString(16).slice(2) + "_" + Date.now();
 }
 
-/* ----------------------------
-   Migration: legacy -> new key
+/* ---------------------------
+   Food DB (calories PER SERVING)
 ---------------------------- */
-function readRecipesRaw(){
-  const modern = safeParse(localStorage.getItem(KEYS.RECIPES) || "[]", []);
-  if (Array.isArray(modern) && modern.length) return modern;
-
-  const legacy = safeParse(localStorage.getItem(KEYS.RECIPES_LEGACY) || "[]", []);
-  if (Array.isArray(legacy) && legacy.length){
-    // normalize legacy shape then persist to modern
-    const migrated = legacy.map(r => normalizeLegacyRecipe(r));
-    localStorage.setItem(KEYS.RECIPES, JSON.stringify(migrated));
-    return migrated;
-  }
-  return [];
-}
-
-function writeRecipes(list){
-  localStorage.setItem(KEYS.RECIPES, JSON.stringify(list));
-}
-
-/* legacy from old file:
-  { name, servings, ingredients, total: "123", perServing: "25" }
-*/
-function normalizeLegacyRecipe(r){
-  const servings = Math.max(1, Math.round(n(r?.servings || 1)));
-  const ingredients = Array.isArray(r?.ingredients) ? r.ingredients.map(it => ({
-    name: String(it?.name || "").trim(),
-    qty: n(it?.qty || 0),
-    cal: n(it?.cal || 0)
-  })) : [];
-  const totalKcal = Math.round(n(r?.total || 0) || ingredients.reduce((a,it)=> a + (n(it.qty)*n(it.cal)), 0));
-  const perServing = Math.round(n(r?.perServing || 0) || (servings ? totalKcal/servings : 0));
-
+function defaultFoodDB(){
   return {
-    id: r?.id || uid(),
-    name: String(r?.name || "Recipe").trim(),
-    servings,
-    ingredients,
-    totalKcal,
-    perServing,
-    notes: String(r?.notes || "").trim(),
-    createdAt: r?.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    "chicken breast": 165,
+    "chicken thigh": 180,
+    "egg": 70,
+    "olive oil": 120,
+    "rice": 205,
+    "salmon": 230
   };
 }
+let foodDB = safeParse(localStorage.getItem(KEYS.FOOD_DB), null) || defaultFoodDB();
+let barcodeDB = safeParse(localStorage.getItem(KEYS.BARCODE_DB), {}) || {};
+function saveFoodDB(){ localStorage.setItem(KEYS.FOOD_DB, JSON.stringify(foodDB)); }
+function saveBarcodeDB(){ localStorage.setItem(KEYS.BARCODE_DB, JSON.stringify(barcodeDB)); }
 
-/* ----------------------------
-   Editor state
+/* ---------------------------
+   Meals
+   We save:
+   {
+     id, date:'YYYY-MM-DD', mealType,
+     items:[{name, qty, calories:<per serving>}],
+     totalKcal,
+     notes
+   }
+   This matches the dashboard normalizer:
+   - date: string
+   - totalKcal: number
+   - items: array with qty + calories (per serving)
 ---------------------------- */
-let editId = null;
-let ingredients = []; // {name, qty, cal}
-
-function addIngredientRow(name="", qty=1, cal=0){
-  ingredients.push({ name, qty, cal });
-  renderIngredients();
-}
-
-function renderIngredients(){
-  const host = $("#ingredients");
-  host.innerHTML = "";
-
-  if(!ingredients.length){
-    host.innerHTML = `<div class="hint">No ingredients yet — add one.</div>`;
-    calc();
-    return;
-  }
-
-  ingredients.forEach((it, idx) => {
-    const row = document.createElement("div");
-    row.className = "ingredientRow";
-    row.innerHTML = `
-      <input placeholder="Ingredient" value="${escapeHtml(it.name)}" data-k="name" data-i="${idx}">
-      <input type="number" min="0" step="0.25" placeholder="Qty" value="${escapeHtml(it.qty)}" data-k="qty" data-i="${idx}">
-      <input type="number" min="0" step="1" placeholder="Calories" value="${escapeHtml(it.cal)}" data-k="cal" data-i="${idx}">
-      <button class="kill" type="button" title="Remove" data-del="${idx}">✕</button>
-    `;
-    host.appendChild(row);
-  });
-
-  calc();
-}
-
-$("#ingredients").addEventListener("input", (e)=>{
-  const inp = e.target.closest("input[data-i]");
-  if(!inp) return;
-  const i = Number(inp.dataset.i);
-  const k = inp.dataset.k;
-  if(!ingredients[i]) return;
-
-  if(k === "name") ingredients[i].name = inp.value;
-  if(k === "qty") ingredients[i].qty = round2(n(inp.value));
-  if(k === "cal") ingredients[i].cal = round2(n(inp.value));
-
-  calc();
-});
-
-$("#ingredients").addEventListener("click", (e)=>{
-  const btn = e.target.closest("button[data-del]");
-  if(!btn) return;
-  const idx = Number(btn.dataset.del);
-  ingredients.splice(idx, 1);
-  renderIngredients();
-});
-
-function calc(){
-  const total = ingredients.reduce((sum, it) => sum + (n(it.qty) * n(it.cal)), 0);
-  const servings = Math.max(1, Math.round(n($("#servings").value || 1)));
-  const per = servings ? total/servings : 0;
-
-  $("#totalCalories").textContent = `${Math.round(total)} kcal`;
-  $("#perServing").textContent = `${Math.round(per)} kcal`;
-}
-
-$("#servings").addEventListener("input", calc);
-
-/* ----------------------------
-   Save / Update / Reset
----------------------------- */
-function resetEditor(){
-  editId = null;
-  $("#editorTitle").textContent = "Create Recipe";
-  $("#recipeName").value = "";
-  $("#servings").value = 5;
-  $("#recipeNotes").value = "";
-  ingredients = [];
-  addIngredientRow("", 1, 0);
-  calc();
-}
-
-function validateEditor(){
-  const name = $("#recipeName").value.trim();
-  if(!name) return { ok:false, msg:"Recipe name required." };
-
-  const servings = Math.max(1, Math.round(n($("#servings").value || 1)));
-  const cleanIngredients = ingredients
-    .map(it => ({ name: String(it.name||"").trim(), qty: n(it.qty), cal: n(it.cal) }))
-    .filter(it => it.name && it.qty > 0 && it.cal >= 0);
-
-  if(!cleanIngredients.length) return { ok:false, msg:"Add at least one ingredient with qty + calories." };
-
-  const totalKcal = Math.round(cleanIngredients.reduce((sum,it)=> sum + (it.qty * it.cal), 0));
-  const perServing = Math.round(totalKcal / servings);
-
-  return {
-    ok:true,
-    recipe: {
-      id: editId || uid(),
-      name,
-      servings,
-      ingredients: cleanIngredients,
-      totalKcal,
-      perServing,
-      notes: $("#recipeNotes").value.trim(),
-      updatedAt: new Date().toISOString()
-    }
-  };
-}
-
-function saveRecipe(){
-  const v = validateEditor();
-  if(!v.ok){ alert(v.msg); return; }
-
-  const list = readRecipesRaw();
-  const now = new Date().toISOString();
-
-  const idx = list.findIndex(r => String(r.id) === String(v.recipe.id));
-  if(idx >= 0){
-    list[idx] = { ...list[idx], ...v.recipe, createdAt: list[idx].createdAt || now };
-    toast("Recipe updated ✅");
-  } else {
-    list.unshift({ ...v.recipe, createdAt: now });
-    toast("Recipe saved ✅");
-  }
-
-  writeRecipes(list);
-  renderRecipeList();
-  resetEditor();
-}
-
-/* ----------------------------
-   Saved recipes list
----------------------------- */
-function sortRecipes(list){
-  const mode = $("#sort").value;
-  if(mode === "name"){
-    return [...list].sort((a,b)=> String(a.name).localeCompare(String(b.name)));
-  }
-  if(mode === "kcal"){
-    return [...list].sort((a,b)=> n(b.perServing) - n(a.perServing));
-  }
-  // recent
-  return [...list].sort((a,b)=> String(b.updatedAt||b.createdAt||"").localeCompare(String(a.updatedAt||a.createdAt||"")));
-}
-
-function renderRecipeList(){
-  const q = $("#search").value.trim().toLowerCase();
-  const host = $("#recipeList");
-  const list = sortRecipes(readRecipesRaw())
-    .filter(r => !q || String(r.name||"").toLowerCase().includes(q));
-
-  $("#emptyHint").style.display = list.length ? "none" : "block";
-  host.innerHTML = "";
-
-  list.forEach(r => {
-    const card = document.createElement("div");
-    card.className = "recipeCard";
-    const created = (r.createdAt || "").slice(0,10);
-    const updated = (r.updatedAt || "").slice(0,10);
-
-    card.innerHTML = `
-      <div class="recipeTop">
-        <div style="min-width:0">
-          <h3 class="recipeName" title="${escapeHtml(r.name)}">${escapeHtml(r.name)}</h3>
-          <div class="recipeMeta">
-            ${escapeHtml(r.servings)} servings • ${escapeHtml(r.ingredients?.length||0)} ingredients
-            ${created ? ` • created ${escapeHtml(created)}` : ``}
-            ${updated ? ` • updated ${escapeHtml(updated)}` : ``}
-            ${r.notes ? `<br><b>Notes:</b> ${escapeHtml(r.notes)}` : ``}
-          </div>
-        </div>
-        <div class="kcalPill">${Math.round(n(r.perServing))} kcal/serv</div>
-      </div>
-
-      <details>
-        <summary>View ingredients</summary>
-        <div class="panelInner" style="margin-top:10px">
-          ${(r.ingredients||[]).map(it => {
-            const lineTotal = Math.round(n(it.qty) * n(it.cal));
-            return `<div class="summaryLine" style="margin-top:10px">
-              <span>${escapeHtml(it.qty)} × ${escapeHtml(it.name)} (${escapeHtml(Math.round(n(it.cal)))} kcal)</span>
-              <span>${escapeHtml(lineTotal)} kcal</span>
-            </div>`;
-          }).join("")}
-        </div>
-      </details>
-
-      <div class="recipeActions">
-        <button class="btn" type="button" data-edit="${escapeHtml(r.id)}">Edit</button>
-        <button class="btn primary" type="button" data-add="${escapeHtml(r.id)}">Add to Log</button>
-        <button class="btn danger" type="button" data-del="${escapeHtml(r.id)}">Delete</button>
-      </div>
-    `;
-    host.appendChild(card);
-  });
-}
-
-$("#recipeList").addEventListener("click", (e)=>{
-  const edit = e.target.closest("button[data-edit]");
-  const del  = e.target.closest("button[data-del]");
-  const add  = e.target.closest("button[data-add]");
-
-  const list = readRecipesRaw();
-
-  if(edit){
-    const id = edit.dataset.edit;
-    const r = list.find(x => String(x.id) === String(id));
-    if(!r) return;
-
-    editId = r.id;
-    $("#editorTitle").textContent = "Edit Recipe";
-    $("#recipeName").value = r.name || "";
-    $("#servings").value = Math.max(1, Math.round(n(r.servings || 1)));
-    $("#recipeNotes").value = r.notes || "";
-    ingredients = (r.ingredients || []).map(it => ({ name: it.name, qty: n(it.qty), cal: n(it.cal) }));
-    if(!ingredients.length) ingredients = [{name:"",qty:1,cal:0}];
-    renderIngredients();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    toast("Editing recipe…");
-    return;
-  }
-
-  if(del){
-    const id = del.dataset.del;
-    const r = list.find(x => String(x.id) === String(id));
-    if(!r) return;
-    if(!confirm(`Delete "${r.name}"?`)) return;
-    const next = list.filter(x => String(x.id) !== String(id));
-    writeRecipes(next);
-    renderRecipeList();
-    toast("Deleted.");
-    return;
-  }
-
-  if(add){
-    const id = add.dataset.add;
-    const r = list.find(x => String(x.id) === String(id));
-    if(!r) return;
-    openAddModal(r);
-    return;
-  }
-});
-
-$("#search").addEventListener("input", renderRecipeList);
-$("#sort").addEventListener("change", renderRecipeList);
-
-/* ----------------------------
-   Add to Log (paciaMeals)
----------------------------- */
-let addRecipe = null;
-
 function readMeals(){
   const meals = safeParse(localStorage.getItem(KEYS.MEALS) || "[]", []);
   return Array.isArray(meals) ? meals : [];
@@ -991,6 +899,360 @@ function writeMeals(meals){
   localStorage.setItem(KEYS.MEALS, JSON.stringify(meals));
 }
 
+/* Normalize older shapes for display (does NOT rewrite unless you save again) */
+function normalizeMealForUI(m){
+  const date =
+    (typeof m?.date === "string" && m.date.slice(0,10)) ||
+    (typeof m?.day === "string" && m.day.slice(0,10)) ||
+    (typeof m?.dateISO === "string" && m.dateISO.slice(0,10)) ||
+    (typeof m?.createdAt === "string" && m.createdAt.slice(0,10)) ||
+    todayISO();
+
+  const mealType = m?.mealType || m?.meal || m?.type || "Meal";
+  const notes = m?.notes || "";
+
+  // Preferred items
+  if (Array.isArray(m?.items) && m.items.length){
+    const items = m.items.map(it => ({
+      name: String(it?.name ?? it?.food ?? "food"),
+      qty: Number(it?.qty ?? it?.quantity ?? 1) || 1,
+      calPer: Number(it?.calories ?? it?.kcal ?? it?.cals ?? 0) || 0
+    }));
+    const total = Math.round(items.reduce((a,it)=> a + (it.qty * it.calPer), 0));
+    return { id: m.id || uid(), date, mealType, notes, items, totalKcal: Number(m.totalKcal ?? m.totalCalories ?? m.total ?? total) || total };
+  }
+
+  // Older "foods" shape (your old file stored {name, qty, kcal} where kcal was already total-per-row)
+  if (Array.isArray(m?.foods) && m.foods.length){
+    const items = m.foods.map(f => {
+      const qty = Number(f?.qty ?? 1) || 1;
+      const kcalMaybeRowTotal = Number(f?.kcal ?? 0) || 0;
+      // Try to infer per-serving; if impossible, treat kcal as per-serving to avoid huge double counts in UI
+      const calPer = qty > 0 ? Math.round(kcalMaybeRowTotal / qty) : kcalMaybeRowTotal;
+      return { name: String(f?.name ?? "food"), qty, calPer };
+    });
+    const total = Math.round(items.reduce((a,it)=> a + (it.qty * it.calPer), 0));
+    return { id: m.id || uid(), date, mealType, notes, items, totalKcal: Number(m.totalKcal ?? m.totalCalories ?? m.total ?? total) || total };
+  }
+
+  // Fallback totals
+  const totalKcal = Number(m?.totalKcal ?? m?.totalCalories ?? m?.total ?? m?.kcal ?? m?.calories ?? 0) || 0;
+  return { id: m.id || uid(), date, mealType, notes, items: [], totalKcal: Math.round(totalKcal) };
+}
+
+/* ---------------------------
+   Current meal builder
+---------------------------- */
+let currentItems = []; // {name, qty, calPer}
+function currentTotal(){
+  return Math.round(currentItems.reduce((a,it)=> a + (it.qty * it.calPer), 0));
+}
+
+function showToast(msg){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(()=>t.classList.remove("show"), 2400);
+}
+
+function burstConfetti(){
+  const box = $("#confetti");
+  box.innerHTML = "";
+  const count = 34;
+  for(let i=0;i<count;i++){
+    const el = document.createElement("i");
+    const left = Math.random()*100;
+    const delay = Math.random()*0.25;
+    const dur = 1.1 + Math.random()*0.9;
+    const w = 8 + Math.random()*6;
+    const h = 12 + Math.random()*10;
+    const colors = ["#7a4634","#5a3226","#f6f1ee","#59d38c","#ffcf6b"];
+    el.style.left = left+"vw";
+    el.style.animationDelay = delay+"s";
+    el.style.animationDuration = dur+"s";
+    el.style.width = w+"px";
+    el.style.height = h+"px";
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    box.appendChild(el);
+  }
+  box.classList.add("show");
+  setTimeout(()=>box.classList.remove("show"), 1600);
+}
+
+function ringSetDaily(total, goal){
+  const fg = document.querySelector(".ringFg");
+  const numEl = $("#dayTotalKcal");
+  const circumference = 289;
+  const pct = goal > 0 ? Math.min(1, total/goal) : 0;
+  fg.style.strokeDasharray = circumference;
+  fg.style.strokeDashoffset = (circumference * (1 - pct)).toFixed(2);
+  numEl.textContent = String(total);
+
+  if(goal > 0){
+    const ratio = total/goal;
+    if(ratio >= 1){ fg.style.stroke = "var(--good)"; }
+    else if(ratio >= 0.75){ fg.style.stroke = "var(--choc2)"; }
+    else if(ratio >= 0.4){ fg.style.stroke = "var(--warn)"; }
+    else { fg.style.stroke = "rgba(255,255,255,.45)"; }
+  } else {
+    fg.style.stroke = "rgba(255,255,255,.25)";
+  }
+}
+
+function renderCurrentMeal(){
+  const list = $("#foodList");
+  if(!currentItems.length){
+    list.innerHTML = `<div class="hint">No items yet — add a food above.</div>`;
+  } else {
+    list.innerHTML = currentItems.map((it,i)=>{
+      const rowTotal = Math.round(it.qty * it.calPer);
+      return `
+        <div class="foodLine">
+          <div class="foodMeta">
+            <div class="foodName">${escapeHtml(it.name)}</div>
+            <div class="foodSub">${it.qty} × ${it.calPer} kcal/serving</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="kcalPill">${rowTotal} kcal</div>
+            <button class="xIcon" type="button" aria-label="Remove" onclick="removeItem(${i})">✕</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+  $("#totalCalories").textContent = `${currentTotal()} kcal`;
+}
+
+window.removeItem = function(i){
+  currentItems.splice(i,1);
+  renderCurrentMeal();
+};
+
+async function ensureCaloriesPerServing(name){
+  const key = name.toLowerCase().trim();
+  if(foodDB[key]) return foodDB[key];
+
+  // Check barcode db aliases
+  if (barcodeDB[key]?.kcal) {
+    foodDB[key] = Number(barcodeDB[key].kcal) || 0;
+    saveFoodDB();
+    return foodDB[key];
+  }
+
+  const kcal = Number(prompt(`Calories per serving for "${key}"?`));
+  if(!kcal || kcal <= 0) return null;
+  foodDB[key] = Math.round(kcal);
+  saveFoodDB();
+  return foodDB[key];
+}
+
+async function addFoodFromInputs(){
+  const nameRaw = $("#foodName").value.trim();
+  if(!nameRaw){
+    showToast("Type a food name first.");
+    return;
+  }
+  const name = nameRaw.toLowerCase();
+  const qty = Number($("#foodQty").value || 1);
+  if(!qty || qty <= 0){
+    showToast("Enter a valid quantity.");
+    return;
+  }
+
+  const calPer = await ensureCaloriesPerServing(name);
+  if(!calPer){
+    showToast("Food not added.");
+    return;
+  }
+
+  currentItems.push({ name, qty: Math.round(qty*100)/100, calPer: Math.round(calPer) });
+  $("#foodName").value = "";
+  hideSuggestions();
+  renderCurrentMeal();
+}
+
+function clearMeal(){
+  currentItems = [];
+  $("#notes").value = "";
+  renderCurrentMeal();
+}
+
+/* ---------------------------
+   Suggestions (autocomplete from foodDB + barcodeDB names)
+---------------------------- */
+function allFoodKeys(){
+  const keys = new Set(Object.keys(foodDB));
+  Object.keys(barcodeDB || {}).forEach(k => keys.add(k));
+  return Array.from(keys).sort((a,b)=>a.localeCompare(b));
+}
+
+function showSuggestions(items){
+  const box = $("#suggestions");
+  if(!items.length){
+    hideSuggestions();
+    return;
+  }
+  box.innerHTML = items.map(k=>{
+    const kcal = foodDB[k] ?? barcodeDB[k]?.kcal ?? "";
+    const displayK = escapeHtml(k);
+    const displayR = kcal ? `${kcal} kcal` : "";
+    return `<div class="suggItem" data-name="${escapeHtml(k)}"><div class="sLeft">${displayK}</div><div class="sRight">${displayR}</div></div>`;
+  }).join("");
+  box.style.display = "block";
+}
+function hideSuggestions(){
+  $("#suggestions").style.display = "none";
+  $("#suggestions").innerHTML = "";
+}
+
+$("#foodName").addEventListener("input", ()=>{
+  const q = $("#foodName").value.toLowerCase().trim();
+  if(!q){ hideSuggestions(); return; }
+  const keys = allFoodKeys().filter(k => k.includes(q)).slice(0,10);
+  showSuggestions(keys);
+});
+
+$("#suggestions").addEventListener("click", (e)=>{
+  const row = e.target.closest(".suggItem");
+  if(!row) return;
+  const name = row.getAttribute("data-name");
+  $("#foodName").value = name;
+  hideSuggestions();
+  $("#foodQty").focus();
+});
+
+document.addEventListener("click",(e)=>{
+  if(!e.target.closest(".autoWrap")) hideSuggestions();
+});
+
+/* ---------------------------
+   Save / load meals for selected date
+---------------------------- */
+function selectedDate(){
+  return ($("#mealDate").value || todayISO()).slice(0,10);
+}
+
+function mealsForDate(dateISO){
+  const meals = readMeals().map(normalizeMealForUI);
+  return meals.filter(m => m.date === dateISO)
+              .sort((a,b)=> (a.mealType||"").localeCompare(b.mealType||""));
+}
+
+function dayTotal(dateISO){
+  return mealsForDate(dateISO).reduce((a,m)=> a + (Number(m.totalKcal)||0), 0);
+}
+
+function renderDayView(){
+  const dateISO = selectedDate();
+  const isToday = dateISO === todayISO();
+
+  $("#dayTitle").textContent = isToday ? "Today" : dateISO;
+  $("#daySub").textContent = isToday
+    ? "Total calories for today’s logged meals."
+    : "Total calories for the selected date.";
+
+  const meals = mealsForDate(dateISO);
+  $("#mealCountChip").textContent = `${meals.length} meal${meals.length===1?"":"s"}`;
+  $("#goalChip").textContent = `Goal ${GOALS.caloriesPerDay} kcal`;
+
+  const total = Math.round(dayTotal(dateISO));
+  ringSetDaily(total, GOALS.caloriesPerDay);
+
+  const history = $("#mealHistory");
+  if(!meals.length){
+    history.innerHTML = `<div class="hint">No meals saved for this date yet.</div>`;
+  } else {
+    history.innerHTML = meals.map(m=>{
+      const itemCount = m.items?.length || 0;
+      const itemLines = (m.items || []).map(it=>{
+        const rowTotal = Math.round(it.qty * it.calPer);
+        return `<div class="itemLine"><span>${escapeHtml(it.qty)} × ${escapeHtml(it.name)}</span><span>${rowTotal} kcal</span></div>`;
+      }).join("");
+
+      const notesLine = m.notes ? `<div class="mealSmall"><b>Notes:</b> ${escapeHtml(m.notes)}</div>` : "";
+      return `
+        <div class="mealCard">
+          <div class="mealTop">
+            <div class="left">
+              <div class="mealType">${escapeHtml(m.mealType)}</div>
+              <div class="mealSmall">${itemCount} item${itemCount===1?"":"s"}</div>
+              ${notesLine}
+            </div>
+            <div class="mealKcal">${Math.round(m.totalKcal)} kcal</div>
+          </div>
+
+          ${itemCount ? `
+            <details>
+              <summary>View items</summary>
+              <div class="itemsList">${itemLines}</div>
+            </details>
+          ` : ""}
+
+          <div class="mealActions">
+            <button class="btn danger" type="button" onclick="deleteMeal('${escapeHtml(m.id)}')">Delete</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // Celebrate when hitting goal (per-day)
+  const hint = $("#goalHint");
+  if(total >= GOALS.caloriesPerDay){
+    hint.textContent = "Goal reached — nice work 🥳";
+  } else {
+    hint.textContent = "Hit your goal? You’ll see a little celebration 🥳";
+  }
+}
+
+window.deleteMeal = function(id){
+  let meals = readMeals();
+  meals = meals.filter(m => String(m.id) !== String(id));
+  writeMeals(meals);
+  showToast("Meal deleted.");
+  renderDayView();
+};
+
+function saveMeal(){
+  const dateISO = selectedDate();
+  if(!currentItems.length){
+    showToast("Add at least 1 food item first.");
+    return;
+  }
+
+  const meal = {
+    id: uid(),
+    date: dateISO,                 // IMPORTANT: date only (YYYY-MM-DD) so dashboard slices cleanly
+    mealType: $("#mealType").value,
+    items: currentItems.map(it => ({
+      name: it.name,
+      qty: it.qty,
+      calories: it.calPer          // IMPORTANT: calories PER SERVING (dashboard multiplies qty * calories)
+    })),
+    totalKcal: currentTotal(),      // dashboard reads totalKcal directly too
+    notes: $("#notes").value || ""
+  };
+
+  const meals = readMeals();
+  meals.push(meal);
+  writeMeals(meals);
+
+  // Clear builder
+  clearMeal();
+
+  // UI feedback
+  showToast("Meal saved ✅");
+  const total = dayTotal(dateISO) + meal.totalKcal; // optimistic
+  if(total >= GOALS.caloriesPerDay){
+    burstConfetti();
+  }
+
+  renderDayView();
+}
+
+/* ---------------------------
+   Modals
+---------------------------- */
 function openOverlay(id){
   const ov = $("#"+id);
   ov.classList.add("show");
@@ -1002,145 +1264,141 @@ function closeOverlay(id){
   ov.setAttribute("aria-hidden","true");
 }
 
-document.addEventListener("click", (e)=>{
+document.addEventListener("click",(e)=>{
   const t = e.target;
-  if(t?.dataset?.close) closeOverlay(t.dataset.close);
-});
-$$(".overlay").forEach(ov=>{
-  ov.addEventListener("click",(e)=>{ if(e.target === ov) closeOverlay(ov.id); });
-});
 
-function openAddModal(r){
-  addRecipe = r;
-  $("#addRecipeName").textContent = r.name;
-  $("#addDate").value = todayISO();
-  $("#addMealType").value = "Recipe";
-  $("#addServings").value = 1;
-  $("#addNotes").value = "From saved recipe";
-  updateAddKcal();
-  openOverlay("addOverlay");
-}
+  if(t?.dataset?.close){
+    closeOverlay(t.dataset.close);
+  }
 
-function updateAddKcal(){
-  if(!addRecipe) return;
-  const servingsToAdd = Math.max(0, n($("#addServings").value || 0));
-  const kcal = Math.round(servingsToAdd * n(addRecipe.perServing));
-  $("#addKcal").textContent = `${kcal} kcal`;
-}
-
-$("#addServings").addEventListener("input", updateAddKcal);
-
-$("#btnConfirmAdd").addEventListener("click", ()=>{
-  if(!addRecipe) return;
-
-  const dateISO = ($("#addDate").value || todayISO()).slice(0,10);
-  const mealType = $("#addMealType").value || "Recipe";
-  const servingsToAdd = Math.max(0.25, n($("#addServings").value || 1));
-  const perServing = Math.round(n(addRecipe.perServing));
-  const totalKcal = Math.round(servingsToAdd * perServing);
-
-  const note = ($("#addNotes").value || "").trim();
-
-  // IMPORTANT: compatible meal shape (same as pacia-food.html)
-  const meal = {
-    id: uid(),
-    date: dateISO,
-    mealType,
-    items: [
-      {
-        name: addRecipe.name,
-        qty: round2(servingsToAdd),
-        calories: perServing   // calories PER SERVING, dashboard multiplies qty*calories
-      }
-    ],
-    totalKcal,
-    notes: note ? note : `From recipe: ${addRecipe.name}`,
-    recipeId: addRecipe.id
-  };
-
-  const meals = readMeals();
-  meals.push(meal);
-  writeMeals(meals);
-
-  closeOverlay("addOverlay");
-  toast("Added to log ✅");
-});
-
-/* ----------------------------
-   Export / Import recipes
----------------------------- */
-function downloadJson(filename, obj){
-  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-$("#btnExport").addEventListener("click", ()=>{
-  const data = readRecipesRaw();
-  downloadJson(`pacia-recipes-${todayISO()}.json`, data);
-  toast("Exported ✅");
-});
-
-$("#btnImport").addEventListener("click", ()=> $("#importFile").click());
-
-$("#importFile").addEventListener("change", async ()=>{
-  const file = $("#importFile").files?.[0];
-  if(!file) return;
-  try{
-    const txt = await file.text();
-    const incoming = safeParse(txt, null);
-    if(!Array.isArray(incoming)) throw new Error("Invalid file");
-
-    const normalized = incoming.map(r => ({
-      id: r.id || uid(),
-      name: String(r.name||"Recipe").trim(),
-      servings: Math.max(1, Math.round(n(r.servings||1))),
-      ingredients: Array.isArray(r.ingredients) ? r.ingredients.map(it => ({
-        name: String(it.name||"").trim(),
-        qty: n(it.qty||0),
-        cal: n(it.cal||0)
-      })).filter(it => it.name && it.qty>0) : [],
-      totalKcal: Math.round(n(r.totalKcal || 0)),
-      perServing: Math.round(n(r.perServing || 0)),
-      notes: String(r.notes||"").trim(),
-      createdAt: r.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }));
-
-    // merge by id
-    const current = readRecipesRaw();
-    const map = new Map(current.map(r => [String(r.id), r]));
-    normalized.forEach(r => map.set(String(r.id), r));
-    writeRecipes(Array.from(map.values()));
-
-    renderRecipeList();
-    toast("Imported ✅");
-  }catch(err){
-    alert("Import failed. Please choose a valid Pacia recipes JSON file.");
-  }finally{
-    $("#importFile").value = "";
+  if(t.closest("#btnManageFoods")){
+    renderFoodsManager();
+    openOverlay("foodsOverlay");
+  }
+  if(t.closest("#btnBarcode")){
+    $("#barCode").value = "";
+    $("#barName").value = "";
+    $("#barKcal").value = "";
+    $("#barAlias").value = "";
+    openOverlay("barcodeOverlay");
   }
 });
 
-/* ----------------------------
-   Init
----------------------------- */
-$("#btnAddIngredient").addEventListener("click", ()=> addIngredientRow("", 1, 0));
-$("#btnReset").addEventListener("click", resetEditor);
-$("#btnSave").addEventListener("click", saveRecipe);
+$$(".overlay").forEach(ov=>{
+  ov.addEventListener("click",(e)=>{
+    if(e.target === ov) closeOverlay(ov.id);
+  });
+});
 
-// Start
+/* ---------------------------
+   Foods Manager
+---------------------------- */
+function renderFoodsManager(){
+  const q = ($("#foodSearch").value || "").toLowerCase().trim();
+  const keys = Object.keys(foodDB).sort((a,b)=>a.localeCompare(b))
+    .filter(k => !q || k.includes(q));
+
+  const host = $("#foodsList");
+  if(!keys.length){
+    host.innerHTML = `<div class="hint">No foods found.</div>`;
+    return;
+  }
+
+  host.innerHTML = keys.map(name=>{
+    const kcal = foodDB[name];
+    return `
+      <div class="foodLine" style="margin-top:10px">
+        <div class="foodMeta">
+          <div class="foodName">${escapeHtml(name)}</div>
+          <div class="foodSub">Calories per serving</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <input data-edit="${escapeHtml(name)}" type="number" min="0" step="1" value="${escapeHtml(kcal)}"
+                 style="width:140px; padding:10px 10px; border-radius:14px" />
+          <button class="btn danger" type="button" data-del="${escapeHtml(name)}">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+$("#foodSearch").addEventListener("input", renderFoodsManager);
+
+$("#foodsList").addEventListener("change",(e)=>{
+  const inp = e.target.closest("input[data-edit]");
+  if(!inp) return;
+  const name = inp.getAttribute("data-edit");
+  const val = Number(inp.value || 0);
+  if(!val || val <= 0){
+    showToast("Calories must be > 0");
+    inp.value = foodDB[name] || 0;
+    return;
+  }
+  foodDB[name] = Math.round(val);
+  saveFoodDB();
+  showToast("Updated ✅");
+});
+
+$("#foodsList").addEventListener("click",(e)=>{
+  const del = e.target.closest("button[data-del]");
+  if(!del) return;
+  const name = del.getAttribute("data-del");
+  if(!confirm(`Delete "${name}" from your foods list?`)) return;
+  delete foodDB[name];
+  saveFoodDB();
+  renderFoodsManager();
+  showToast("Deleted.");
+});
+
+/* ---------------------------
+   Barcode / quick add
+---------------------------- */
+$("#saveBarcode").addEventListener("click", ()=>{
+  const code = ($("#barCode").value || "").trim().toLowerCase();
+  const name = ($("#barName").value || "").trim().toLowerCase();
+  const kcal = Number($("#barKcal").value || 0);
+  const alias = ($("#barAlias").value || "").trim().toLowerCase();
+
+  if(!name || !kcal || kcal <= 0){
+    showToast("Enter a food name + calories per serving.");
+    return;
+  }
+
+  // Save in barcode DB (code optional), and also put into foodDB for autocomplete
+  const key = alias || name;
+  barcodeDB[key] = { code: code || "", name, kcal: Math.round(kcal) };
+  saveBarcodeDB();
+
+  // also store into main food db for immediate use
+  foodDB[key] = Math.round(kcal);
+  saveFoodDB();
+
+  closeOverlay("barcodeOverlay");
+  showToast("Saved to foods ✅");
+});
+
+/* ---------------------------
+   Wire up buttons + init
+---------------------------- */
+$("#btnAddFood").addEventListener("click", addFoodFromInputs);
+$("#btnClearMeal").addEventListener("click", ()=>{
+  clearMeal();
+  showToast("Cleared.");
+});
+$("#btnSaveMeal").addEventListener("click", saveMeal);
+
+// Enter to add food quickly
+$("#foodName").addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); addFoodFromInputs(); } });
+$("#foodQty").addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDefault(); addFoodFromInputs(); } });
+
+$("#mealDate").addEventListener("change", renderDayView);
+
+// Init
 (function init(){
-  // Ensure at least one row in editor
-  resetEditor();
-  // Render list
-  renderRecipeList();
+  $("#mealDate").value = todayISO();
+  $("#goalChip").textContent = `Goal ${GOALS.caloriesPerDay} kcal`;
+  renderCurrentMeal();
+  renderDayView();
 })();
 </script>
 </body>
