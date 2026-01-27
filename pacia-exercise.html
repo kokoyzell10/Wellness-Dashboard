@@ -453,7 +453,50 @@
       from{ transform: translateX(-50%) translateY(8px); opacity:0 }
       to{ transform: translateX(-50%) translateY(0); opacity:1 }
     }
-  </style>
+      /* Layout fix: prevent header pill overlap with title */
+    header{
+      display:grid;
+      grid-template-columns: 1fr auto 1fr;
+      grid-template-rows: auto auto;
+      column-gap:12px;
+      align-items:start;
+    }
+    header h1{
+      grid-column:2;
+      grid-row:1;
+      justify-self:center;
+    }
+    header .sub{
+      grid-column:2;
+      grid-row:2;
+      justify-self:center;
+    }
+    header .topTools{
+      position:static;
+      grid-column:3;
+      grid-row:1;
+      justify-self:end;
+      align-self:start;
+      margin:0;
+    }
+    @media (max-width: 900px){
+      header{
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+      }
+      header h1, header .sub{
+        grid-column:1;
+        justify-self:center;
+      }
+      header .topTools{
+        grid-column:1;
+        grid-row:3;
+        justify-self:center;
+        margin-top:16px;
+        justify-content:center;
+      }
+    }
+</style>
 </head>
 
 <body>
@@ -641,58 +684,6 @@ const MUSCLE_LABEL = {
 const $ = (sel, el=document) => el.querySelector(sel);
 const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 
-// Cloud sync hook (no-op by default; overwritten by the Supabase module script below)
-window.saveToSupabase = window.saveToSupabase || (async function(_payload){});
-function saveToSupabase(payload){
-  try { return window.saveToSupabase(payload); } catch(_e) { /* ignore */ }
-}
-
-// Dashboard-compatible storage keys (so cloud writes don't wipe other data)
-const STORAGE = {
-  mealsKeys: ["paciaMeals","pacia_meals","paciaFoodMeals","pacia_food_meals","pacia.meals","paciaMealsV1"],
-  waterLogsKey: "paciaWaterLogs"
-};
-
-function readMeals(){
-  for(const k of STORAGE.mealsKeys){
-    const raw = localStorage.getItem(k);
-    if(!raw) continue;
-    const val = safeParse(raw, null);
-    if(Array.isArray(val)) return val;
-    if(val && Array.isArray(val.meals)) return val.meals;
-  }
-  return [];
-}
-
-function readWaterLogs(){
-  const val = safeParse(localStorage.getItem(STORAGE.waterLogsKey) || "[]", []);
-  const arr = Array.isArray(val) ? val : [];
-  return arr
-    .map(x=>{
-      const date = String(x?.date || x?.day || todayISO()).slice(0,10);
-      const oz = Number(x?.oz ?? x?.amountOz ?? x?.waterOz ?? 0) || 0;
-      return {date, oz};
-    })
-    .filter(x=>x.oz > 0 && x.date);
-}
-
-// Debounced full-state sync (keeps the single Supabase row complete)
-let __syncTimer = null;
-function syncAllToCloud(reason=""){
-  clearTimeout(__syncTimer);
-  __syncTimer = setTimeout(()=>{
-    saveToSupabase({
-      meals: readMeals(),
-      workoutDays: readWorkoutDays(),
-      waterLogs: readWaterLogs(),
-      workoutSessions: readSessions(),
-      exerciseLibrary: readExerciseLibrary(),
-      _meta: { reason, at: new Date().toISOString(), page: "movement" }
-    });
-  }, 450);
-}
-
-
 function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
 function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
 function keyISO(d){ const x = new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); }
@@ -719,7 +710,6 @@ function readWorkoutDays(){
 }
 function writeWorkoutDays(days){
   localStorage.setItem(KEYS.WORKOUT_DAYS, JSON.stringify(uniqSorted(days.filter(isISODate))));
-  syncAllToCloud("writeWorkoutDays");
 }
 
 function readSessions(){
@@ -728,7 +718,6 @@ function readSessions(){
 }
 function writeSessions(obj){
   localStorage.setItem(KEYS.WORKOUT_SESSIONS, JSON.stringify(obj || {}));
-  syncAllToCloud("writeSessions");
 }
 
 function migrateLegacy(){
@@ -749,10 +738,8 @@ function migrateLegacy(){
   if(next.length){
     localStorage.setItem(KEYS.EXERCISE_LIBRARY, JSON.stringify(next));
     toast("Migrated saved exercises ✅");
-    syncAllToCloud("migrateLegacy");
   }
 }
-
 
 function readExerciseLibrary(){
   const lib = safeParse(localStorage.getItem(KEYS.EXERCISE_LIBRARY) || "[]", []);
@@ -760,7 +747,6 @@ function readExerciseLibrary(){
 }
 function writeExerciseLibrary(list){
   localStorage.setItem(KEYS.EXERCISE_LIBRARY, JSON.stringify(list));
-  syncAllToCloud("writeExerciseLibrary");
 }
 
 /* ----------------------------
@@ -1217,7 +1203,6 @@ $("#btnClearAll").addEventListener("click", ()=>{
   if(!confirm("Clear ALL workout days and session details?")) return;
   localStorage.removeItem(KEYS.WORKOUT_DAYS);
   localStorage.removeItem(KEYS.WORKOUT_SESSIONS);
-  syncAllToCloud("clearAll");
   workouts = [];
   selected.clear();
   renderCalendar();
@@ -1229,40 +1214,7 @@ $("#btnClearAll").addEventListener("click", ()=>{
 /* ----------------------------
    Init
 ---------------------------- */
-
-function refreshFromStorage(){
-  workouts = readWorkoutDays();
-  selected.clear();
-  renderExerciseSelect();
-  renderCalendar();
-  updateStats();
-  renderLogList();
-
-  // keep muscle preview in sync with current dropdown selection
-  const id = $("#exerciseSelect").value;
-  const lib = readExerciseLibrary();
-  const ex = lib.find(x => String(x.id) === String(id));
-  const muscles = ex?.muscles || [];
-  setActiveMuscles(muscles);
-  setPickerFromMuscles(muscles);
-}
-
-// Expose helper to module script
-window.refreshExerciseUI = window.refreshExerciseUI || refreshFromStorage;
-
-// Refresh + cloud sync when returning to this tab/page
-window.addEventListener("focus", ()=>{ refreshFromStorage(); syncAllToCloud("focus"); });
-document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ refreshFromStorage(); syncAllToCloud("visibility"); } });
-
-// Cross-tab sync (fires only in other tabs)
-window.addEventListener("storage", (e)=>{
-  const k = e.key;
-  if(!k) return;
-  const watched = new Set([KEYS.WORKOUT_DAYS, KEYS.WORKOUT_SESSIONS, KEYS.EXERCISE_LIBRARY, STORAGE.waterLogsKey, ...STORAGE.mealsKeys]);
-  if(watched.has(k)) refreshFromStorage();
-});
-
-\(function init\(\)\{
+(function init(){
   migrateLegacy();
   ensureDefaultsInLibrary();
   renderExerciseSelect();
@@ -1279,79 +1231,5 @@ window.addEventListener("storage", (e)=>{
   setPickerFromMuscles([]);
 })();
 </script>
-
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
-  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // Quick sanity check (Supabase anon keys are usually JWTs starting with "eyJ")
-  if (typeof SUPABASE_ANON_KEY === "string" && !SUPABASE_ANON_KEY.startsWith("eyJ")) {
-    console.warn("SUPABASE_ANON_KEY does not look like a Supabase anon key. Double-check Settings → API → anon public key.");
-  }
-
-  async function loadFromSupabase() {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  window.saveToSupabase = async function(payload) {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return;
-
-    await supabase
-      .from("wellness_state")
-      .upsert({
-        user_id: auth.user.id,
-        data: payload,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-  };
-
-  async function syncFromCloudIfSignedIn(){
-    const cloudData = await loadFromSupabase();
-    if (!cloudData) return;
-
-    // Write cloud state into the same localStorage keys the rest of the app already uses
-    if (cloudData.meals) {
-      localStorage.setItem("paciaMeals", JSON.stringify(cloudData.meals));
-    }
-    if (cloudData.workoutDays) {
-      localStorage.setItem("paciaWorkoutDays", JSON.stringify(cloudData.workoutDays));
-    }
-    if (cloudData.waterLogs) {
-      localStorage.setItem("paciaWaterLogs", JSON.stringify(cloudData.waterLogs));
-    }
-    if (cloudData.workoutSessions) {
-      localStorage.setItem("paciaWorkoutSessions", JSON.stringify(cloudData.workoutSessions));
-    }
-    if (cloudData.exerciseLibrary) {
-      localStorage.setItem("paciaExerciseLibrary", JSON.stringify(cloudData.exerciseLibrary));
-    }
-
-    window.refreshExerciseUI && window.refreshExerciseUI();
-  }
-
-  // Keep data synced across logins/logouts
-  supabase.auth.onAuthStateChange(async (_event, session) => {
-    if (session?.user) await syncFromCloudIfSignedIn();
-  });
-
-  // Initial sync
-  await syncFromCloudIfSignedIn();
-</script>
-
 </body>
 </html>
