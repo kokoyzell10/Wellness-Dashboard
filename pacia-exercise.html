@@ -118,18 +118,25 @@
       font-weight:800;
     }
 
-    .topTools{
-      position:absolute;
-      right:0;
-      top: 10px;
+    .headerBar{
+      margin-top: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .headerLeft, .headerRight{
       display:flex;
       gap:10px;
       align-items:center;
-      justify-content:flex-end;
       flex-wrap:wrap;
     }
+    .headerLeft{ justify-content:flex-start; }
+    .headerRight{ justify-content:flex-end; }
     @media (max-width: 900px){
-      .topTools{ position:static; margin-top:16px; justify-content:center; }
+      .headerBar{ justify-content:center; }
+      .headerLeft, .headerRight{ justify-content:center; }
     }
 
     .pillBtn{
@@ -472,17 +479,18 @@
 
   <div class="wrap">
     <header>
-      <h1>Pacia’s Movement</h1>
-      <p class="sub">Log workout days anytime — even days from last week</p>
+            <div class="headerBar">
+        <div class="headerLeft">
+          <button class="pillBtn" id="authPill" type="button" title="Sign in"><span class="dot"></span> Sign in</button>
+          <button class="pillBtn" id="logoutPill" type="button" title="Sign out" style="display:none"><span class="dot"></span> Logout</button>
+        </div>
 
-      <div class="topTools">
-        <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
-        <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
-        <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
-        <a class="pillBtn" href="pacia-recipes.html" title="Open recipes"><span class="dot"></span> Recipes</a>
-
-        <button class="pillBtn" id="authPill" type="button" title="Sign in"><span class="dot"></span> Sign in</button>
-        <button class="pillBtn" id="logoutPill" type="button" title="Sign out" style="display:none"><span class="dot"></span> Logout</button>
+        <div class="headerRight">
+          <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+          <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
+          <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
+          <a class="pillBtn" href="pacia-recipes.html" title="Open recipes"><span class="dot"></span> Recipes</a>
+        </div>
       </div>
     </header>
 
@@ -520,7 +528,9 @@
             </div>
           </div>
 
-          <div class="hint">
+<h1>Pacia’s Movement</h1>
+      <p class="sub">Log workout days anytime — even days from last week</p>
+<div class="hint">
             Click dates to <b>select</b> (brown). Dates already logged are <b>green</b>. You can select past days and hit “Save selected”.
           </div>
 
