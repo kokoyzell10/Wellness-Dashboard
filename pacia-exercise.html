@@ -147,6 +147,17 @@
       user-select:none;
       white-space:nowrap;
     }
+
+    .pillBtn:link, .pillBtn:visited{
+      text-decoration:none !important;
+      color: var(--text);
+    }
+    .pillBtn.disabled{
+      cursor: default;
+      pointer-events: none;
+      opacity: .95;
+    }
+
     .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
     .pillBtn:active{ transform: translateY(0px) scale(.99); }
     .pillBtn .dot{
@@ -469,6 +480,9 @@
         <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
         <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
         <a class="pillBtn" href="pacia-recipes.html" title="Open recipes"><span class="dot"></span> Recipes</a>
+
+        <button class="pillBtn" id="authPill" type="button" title="Sign in"><span class="dot"></span> Sign in</button>
+        <button class="pillBtn" id="logoutPill" type="button" title="Sign out" style="display:none"><span class="dot"></span> Logout</button>
       </div>
     </header>
 
@@ -1194,8 +1208,61 @@ $("#btnClearAll").addEventListener("click", ()=>{
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
   const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // --- Auth pills (match dashboard behavior) ---
+  const authPill = document.getElementById("authPill");
+  const logoutPill = document.getElementById("logoutPill");
+
+  function escHtml(str){
+    return String(str ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function displayName(user){
+    return (
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.email ||
+      "Signed in"
+    );
+  }
+  function renderAuth(user){
+    if(!authPill || !logoutPill) return;
+    if(user){
+      authPill.classList.add("disabled");
+      authPill.innerHTML = `<span class="dot"></span> ${escHtml(displayName(user))}`;
+      logoutPill.style.display = "";
+    } else {
+      authPill.classList.remove("disabled");
+      authPill.innerHTML = `<span class="dot"></span> Sign in`;
+      logoutPill.style.display = "none";
+    }
+  }
+
+  authPill?.addEventListener("click", async ()=>{
+    // Only sign-in when signed out
+    const { data } = await supabase.auth.getUser();
+    if(data?.user) return;
+
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.href.split("#")[0]
+      }
+    });
+  });
+
+  logoutPill?.addEventListener("click", async ()=>{
+    await supabase.auth.signOut();
+  });
+
+  // Initial render + live updates
+  const { data: initUser } = await supabase.auth.getUser();
+  renderAuth(initUser?.user || null);
+  supabase.auth.onAuthStateChange((_event, session)=>{
+    renderAuth(session?.user || null);
+  });
+
 
   let __cloudCache = null;
   let __saving = false;
