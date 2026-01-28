@@ -455,7 +455,7 @@ background:
       font-size: 13px;
     }
       
-        /* Ensure pill links have no underline (including anchors) */
+            /* Ensure pill links have no underline (including anchors) */
     a.pillBtn, a.pillBtn:visited, a.pillBtn:hover, a.pillBtn:active{
       text-decoration:none !important;
       color: var(--text);
@@ -532,30 +532,30 @@ background:
         grid-template-columns: 1fr;
         grid-template-rows: auto auto auto auto;
       }
-      header h1{ grid-row:1; }
-      header .sub{ grid-row:2; }
+      header h1{
+        grid-column:1;
+        grid-row:1;
+        justify-self:center;
+        text-align:center;
+      }
+      header .sub{
+        grid-column:1;
+        grid-row:2;
+        justify-self:center;
+        text-align:center;
+      }
       header .authTools{
+        grid-column:1;
         grid-row:3;
         justify-self:center;
         margin-top:16px;
         justify-content:center;
       }
       header .topTools{
+        grid-column:1;
         grid-row:4;
         justify-self:center;
         margin-top:10px;
-        justify-content:center;
-      }
-    }
-header h1, header .sub{
-        grid-column:1;
-        justify-self:center;
-      }
-      header .topTools{
-        grid-column:1;
-        grid-row:3;
-        justify-self:center;
-        margin-top:16px;
         justify-content:center;
       }
     }
@@ -1185,96 +1185,18 @@ init();
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let __cloudCache = null;
 
-
-  // If we returned from OAuth, exchange the code for a session on THIS page.
-  try{
-    const u = new URL(window.location.href);
-    if (u.searchParams.get('code')){
-      await supabase.auth.exchangeCodeForSession(window.location.href);
-      history.replaceState({}, document.title, u.origin + u.pathname);
-    }
-  }catch(e){
-    console.warn('OAuth exchange failed:', e);
-  }
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
 
-  btnGoogle.addEventListener("click", async () => {
-    if (btnGoogle.classList.contains("signedLabel") || btnGoogle.disabled) return;
-    try{
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`
-        }
-      });
-    }catch(e){
-      if (window.toast) window.toast(`Sign-in failed: ${e?.message || e}`);
-      console.warn(e);
-    }
-  });
+  const escapeHtml = (s)=>String(s ?? "").replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[ch]));
 
-});
-
-  btnLogout.addEventListener("click", async () => {
-    try{
-      await supabase.auth.signOut();
-    }finally{
-      __cloudCache = null;
-      supabase.auth.onAuthStateChange(() => { refreshAuthUI(); });
-
-  refreshAuthUI();
-      if (window.toast) window.toast("Signed out");
-    }
-  });
-
-async function loadFromSupabase() {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  window.saveToSupabase = async function(payload) {
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) throw new Error("Not signed in");
-
-    let base = __cloudCache;
-    if (!base) {
-      const { data } = await supabase
-        .from("wellness_state")
-        .select("data")
-        .eq("user_id", auth.user.id)
-        .single();
-      base = data?.data || {};
-    }
-
-    const merged = { ...(base||{}), ...(payload||{}) };
-    __cloudCache = merged;
-
-    await supabase
-      .from("wellness_state")
-      .upsert({
-        user_id: auth.user.id,
-        data: merged,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-  };
-
-  async function refreshAuthUI() {
+  async function refreshAuthUI(){
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
 
-    const escapeHtml = (s)=>String(s??"").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-
-    if (!user) {
+    if (!user){
       btnGoogle.style.display = "";
       btnGoogle.disabled = false;
       btnGoogle.classList.remove("signedLabel");
@@ -1300,45 +1222,110 @@ async function loadFromSupabase() {
     btnLogout.style.display = "";
   }
 
-= await supabase.auth.getUser();
-    const user = data?.user;
-    if (!user) {
-      btnGoogle.style.display = "";
-      btnLogout.style.display = "none";
-      return;
+  // If we returned from OAuth, exchange the code for a session on THIS page.
+  try{
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("code")){
+      await supabase.auth.exchangeCodeForSession(window.location.href);
+      history.replaceState({}, document.title, u.origin + u.pathname);
     }
-    btnGoogle.style.display = "none";
-    btnLogout.style.display = "";
+  }catch(e){
+    console.warn("OAuth exchange failed:", e);
   }
 
-  const cloudData = await loadFromSupabase();
-  if (cloudData) {
-    __cloudCache = cloudData;
+  btnGoogle.addEventListener("click", async () => {
+    if (btnGoogle.classList.contains("signedLabel") || btnGoogle.disabled) return;
+    try{
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}${window.location.pathname}`
+        }
+      });
+    }catch(e){
+      if (window.toast) window.toast(`Sign-in failed: ${e?.message || e}`);
+      console.warn(e);
+    }
+  });
 
-    const map = [
-      ["meals","paciaMeals"],
-      ["workoutDays","paciaWorkoutDays"],
-      ["waterLogs","paciaWaterLogs"],
-      ["recipes","paciaRecipes"],
-      ["workoutSessions","paciaWorkoutSessions"],
-      ["exerciseLibrary","paciaExerciseLibrary"],
-      ["journalPages","paciaJournalPages"],
-      ["sleepLogs","paciaSleepLogs"]
-    ];
-    for (const [k, ls] of map){
-      if (cloudData[k] !== undefined){
-        try { localStorage.setItem(ls, JSON.stringify(cloudData[k])); } catch(e){}
-      }
+  btnLogout.addEventListener("click", async () => {
+    try{
+      await supabase.auth.signOut();
+    }finally{
+      __cloudCache = null;
+      await refreshAuthUI();
+      if (window.toast) window.toast("Signed out");
+    }
+  });
+
+  async function loadFromSupabase(){
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) return null;
+
+    const { data, error } = await supabase
+      .from("wellness_state")
+      .select("data")
+      .eq("user_id", auth.user.id)
+      .single();
+
+    if (error || !data) return null;
+    return data.data;
+  }
+
+  window.saveToSupabase = async function(payload){
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth?.user) throw new Error("Not signed in");
+
+    let base = __cloudCache;
+    if (!base){
+      const { data } = await supabase
+        .from("wellness_state")
+        .select("data")
+        .eq("user_id", auth.user.id)
+        .single();
+      base = data?.data || {};
     }
 
-    // After syncing, ensure UI reads the latest local state.
-    // If this is the first load after signing in, a reload keeps everything consistent.
-    // (safe because journal autosaves)
+    const merged = { ...(base||{}), ...(payload||{}) };
+    __cloudCache = merged;
+
+    await supabase
+      .from("wellness_state")
+      .upsert({
+        user_id: auth.user.id,
+        data: merged,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" });
+  };
+
+  // When signed in, pull cloud state to localStorage (so this page matches dashboard).
+  try{
+    const cloudData = await loadFromSupabase();
+    if (cloudData){
+      __cloudCache = cloudData;
+
+      const map = [
+        ["meals","paciaMeals"],
+        ["workoutDays","paciaWorkoutDays"],
+        ["waterLogs","paciaWaterLogs"],
+        ["recipes","paciaRecipes"],
+        ["workoutSessions","paciaWorkoutSessions"],
+        ["exerciseLibrary","paciaExerciseLibrary"],
+        ["journalPages","paciaJournalPages"],
+        ["sleepLogs","paciaSleepLogs"]
+      ];
+      for (const [k, ls] of map){
+        if (cloudData[k] !== undefined){
+          try { localStorage.setItem(ls, JSON.stringify(cloudData[k])); } catch(e){}
+        }
+      }
+    }
+  }catch(e){
+    console.warn("Cloud load failed:", e);
   }
 
   supabase.auth.onAuthStateChange(() => { refreshAuthUI(); });
-
-  refreshAuthUI();
+  await refreshAuthUI();
 </script>
 
 </body>
