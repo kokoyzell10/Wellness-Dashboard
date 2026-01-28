@@ -1573,8 +1573,6 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
     }
   });
 
-});
-
   btnLogout.addEventListener("click", async () => {
     await supabase.auth.signOut();
     location.reload();
