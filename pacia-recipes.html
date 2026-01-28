@@ -117,19 +117,30 @@
       font-weight:800;
     }
 
-    .topTools{
-      position:absolute;
-      right:0;
-      top: 10px;
+    .headerBar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom: 18px;
+    }
+    .leftTools,.rightTools{
       display:flex;
       gap:10px;
       align-items:center;
-      justify-content:flex-end;
       flex-wrap:wrap;
     }
-    @media (max-width: 900px){
-      .topTools{ position:static; margin-top:16px; justify-content:center; }
+    .rightTools{
+      justify-content:flex-end;
+      margin-left:auto;
     }
+    @media (max-width: 900px){
+      .headerBar{ justify-content:center; }
+      .leftTools,.rightTools{ width:100%; justify-content:center; }
+      .rightTools{ margin-left:0; }
+    }
+}
 
     .pillBtn{
       border:1px solid var(--stroke);
@@ -142,13 +153,19 @@
       display:flex; gap:8px; align-items:center;
       transition: transform .12s ease, background .12s ease, border-color .12s ease;
       font-weight:900;
-      text-decoration:none;
+      text-decoration:none !important;
       user-select:none;
       white-space:nowrap;
     }
     .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
     .pillBtn:active{ transform: translateY(0px) scale(.99); }
-    .pillBtn .dot{
+    .pillBtn:visited{
+      color: var(--text);
+      text-decoration:none !important;
+    }
+    .pillBtn *{ text-decoration:none !important; }
+    .pillBtn[aria-disabled="true"]{ cursor:default; opacity:.95; }
+.pillBtn .dot{
       width:10px; height:10px; border-radius:999px;
       background: var(--choc);
       box-shadow: 0 0 0 6px rgba(90,50,38,.15);
@@ -455,17 +472,28 @@
 
   <div class="wrap">
     <header>
-      <h1>Pacia’s Recipes</h1>
-      <p class="sub">Build recipes once — then log servings in one click</p>
+      <div class="headerBar">
+        <div class="leftTools">
+          <button class="pillBtn" id="btnAuth" type="button" title="Sign in">
+            <span class="dot"></span><span id="authText">Sign in</span>
+          </button>
+          <button class="pillBtn" id="btnLogout" type="button" title="Sign out" style="display:none">
+            <span class="dot"></span> Logout
+          </button>
+        </div>
 
-      <div class="topTools">
-        <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+        <div class="rightTools">
+          <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
         <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
         <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
         <button class="pillBtn" id="btnExport" type="button" title="Export recipes JSON"><span class="dot"></span> Export</button>
         <button class="pillBtn" id="btnImport" type="button" title="Import recipes JSON"><span class="dot"></span> Import</button>
         <input id="importFile" type="file" accept="application/json" style="display:none">
+        </div>
       </div>
+
+      <h1>Pacia’s Recipes</h1>
+      <p class="sub">Build recipes once — then log servings in one click</p>
     </header>
 
     <div class="grid">
@@ -1106,8 +1134,79 @@ $("#btnSave").addEventListener("click", saveRecipe);
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
   const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+
+  /* ----------------------------
+     Auth pills (matches dashboard behavior)
+  ---------------------------- */
+  const btnAuth = document.getElementById("btnAuth");
+  const btnLogout = document.getElementById("btnLogout");
+  const authText = document.getElementById("authText");
+
+  function displayName(user){
+    const md = user?.user_metadata || {};
+    return (md.full_name || md.name || user?.email || "Signed in");
+  }
+
+  async function refreshAuthUI(){
+    const { data } = await supabase.auth.getSession();
+    const user = data?.session?.user;
+
+    if(user){
+      btnAuth.disabled = true;
+      btnAuth.setAttribute("aria-disabled","true");
+      authText.textContent = displayName(user);
+      btnLogout.style.display = "";
+    } else {
+      btnAuth.disabled = false;
+      btnAuth.removeAttribute("aria-disabled");
+      authText.textContent = "Sign in";
+      btnLogout.style.display = "none";
+    }
+  }
+
+  btnAuth?.addEventListener("click", async ()=>{
+    const { data } = await supabase.auth.getSession();
+    if(data?.session?.user) return;
+
+    if(location.protocol === "file:"){
+      alert("Google sign-in won’t work when opening this file directly (file://). Please use your GitHub Pages URL (https).");
+      return;
+    }
+
+    const redirectTo = `${location.origin}${location.pathname}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo }
+    });
+    if(error) alert(error.message);
+  });
+
+  btnLogout?.addEventListener("click", async ()=>{
+    await supabase.auth.signOut();
+  });
+
+  // If we returned from OAuth with a code, exchange it for a session on this page.
+  try{
+    const u = new URL(location.href);
+    const code = u.searchParams.get("code");
+    if(code){
+      await supabase.auth.exchangeCodeForSession(code);
+      u.searchParams.delete("code");
+      u.searchParams.delete("state");
+      u.searchParams.delete("error");
+      u.searchParams.delete("error_description");
+      history.replaceState({}, document.title, u.toString());
+    }
+  }catch(e){}
+
+  supabase.auth.onAuthStateChange(async ()=>{
+    await refreshAuthUI();
+  });
+
+  await refreshAuthUI();
 
   let __cloudCache = null;
   let __saving = false;
