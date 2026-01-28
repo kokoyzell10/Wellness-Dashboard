@@ -1513,15 +1513,67 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
 
+  const safeToast = (msg) => {
+    try{
+      if (typeof window.showToast === "function") window.showToast(msg);
+      else if (typeof showToast === "function") showToast(msg);
+      else alert(msg);
+    } catch(e){
+      try { alert(msg); } catch {}
+    }
+  };
+
+  async function handleAuthRedirect(){
+    // If Supabase redirected back with an OAuth code, exchange it for a session
+    try{
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get("code");
+      if (!code) return;
+
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      // Clean URL (remove code + state params) so refresh doesn't re-run the exchange
+      url.searchParams.delete("code");
+      url.searchParams.delete("state");
+      url.searchParams.delete("error");
+      url.searchParams.delete("error_description");
+      window.history.replaceState({}, document.title, url.toString());
+
+      if (error) safeToast(`Sign-in failed: ${error.message}`);
+      else safeToast("Signed in ✅");
+    } catch (e){
+      safeToast("Sign-in callback error. Try again.");
+      console.warn(e);
+    }
+  }
+
+  await handleAuthRedirect();
+
+
   btnGoogle.addEventListener("click", async () => {
-    if (btnGoogle.disabled) return;
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
+    try{
+      // OAuth requires https (GitHub Pages). file:// will silently fail.
+      if (window.location.protocol === "file:"){
+        safeToast("Sign-in only works on GitHub Pages (https), not when opening the file locally.");
+        return;
       }
-    });
+      if (btnGoogle.disabled) return;
+
+      // Redirect back to this same page, then handleAuthRedirect() (above) exchanges the code for a session.
+      const redirectTo = window.location.href.split("#")[0];
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo }
+      });
+
+      if (error) safeToast(`Sign-in error: ${error.message}`);
+    } catch (e){
+      safeToast("Sign-in failed. Check Supabase Auth redirect URLs.");
+      console.warn(e);
+    }
   });
+
+});
 
   btnLogout.addEventListener("click", async () => {
     await supabase.auth.signOut();
