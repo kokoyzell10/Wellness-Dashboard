@@ -492,6 +492,9 @@
           <a class="pillBtn" href="pacia-recipes.html" title="Open recipes"><span class="dot"></span> Recipes</a>
         </div>
       </div>
+
+      <h1>Pacia’s Movement</h1>
+      <p class="sub">Log workout days anytime — even days from last week</p>
     </header>
 
     <div class="grid">
@@ -528,8 +531,6 @@
             </div>
           </div>
 
-<h1>Pacia’s Movement</h1>
-      <p class="sub">Log workout days anytime — even days from last week</p>
 <div class="hint">
             Click dates to <b>select</b> (brown). Dates already logged are <b>green</b>. You can select past days and hit “Save selected”.
           </div>
@@ -976,12 +977,26 @@ $("#nextMonth").addEventListener("click", ()=>{
 });
 
 $("#btnLogToday").addEventListener("click", ()=>{
-  selected.add(todayISO());
+  const iso = todayISO();
+
+  const notes = $("#sessionNotes").value.trim();
+  const minutes = n($("#sessionMinutes").value || 0);
+  const tag = $("#sessionTag").value.trim();
+
+  // Log today immediately (turns green), and save the optional fields for that date
+  workouts = uniqSorted([...workouts, iso]);
+  writeWorkoutDays(workouts);
+
+  upsertSessionForDate(iso, { notes, minutes, tag });
+
+  // Keep selection clean (avoid leaving today "selected" after logging)
+  selected.delete(iso);
+
   renderCalendar();
   updateStats();
-  toast("Selected today ✅");
+  renderLogList();
+  toast("Logged today ✅");
 });
-
 $("#btnClearSel").addEventListener("click", ()=>{
   selected.clear();
   renderCalendar();
