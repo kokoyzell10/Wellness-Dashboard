@@ -554,6 +554,17 @@
 
     /* Fix: prevent double-dot on auth buttons */
     #btnGoogle::before, #btnLogout::before{ content: none !important; display:none !important; }
+
+    /* Auth state (signed in) */
+    #btnGoogle.isSignedIn{
+      opacity:.95;
+      cursor: default;
+    }
+    #btnGoogle.isSignedIn:hover{
+      transform:none;
+      background: rgba(0,0,0,.25);
+      border-color: var(--stroke);
+    }
 </style>
 </head>
 
@@ -1502,12 +1513,14 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
   const btnLogout = document.getElementById("btnLogout");
 
   btnGoogle.addEventListener("click", async () => {
+    if (btnGoogle.disabled) return;
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
       }
     });
+  });
   });
 
   btnLogout.addEventListener("click", async () => {
@@ -1558,19 +1571,48 @@ window.saveToSupabase = async function(payload) {
     }, { onConflict: "user_id" });
 };
 
-  async function refreshAuthUI() {
-    const { data } = await supabase.auth.getUser();
-    const user = data?.user;
-
-    if (!user) {
-      btnGoogle.style.display = "";
-      btnLogout.style.display = "none";
-      return;
-    }
-
-    btnGoogle.style.display = "none";
-    btnLogout.style.display = "";
+  async function refreshAuthUI(sessionUser=null) {
+  // Prefer session if provided, otherwise query Supabase
+  let user = sessionUser;
+  if (!user){
+    const { data: s } = await supabase.auth.getSession();
+    user = s?.session?.user || null;
   }
+
+  const getDisplayName = (u) => {
+    const meta = u?.user_metadata || {};
+    return (meta.full_name || meta.name || u?.email || "Signed in").toString();
+  };
+
+  if (!user) {
+    btnGoogle.style.display = "";
+    btnGoogle.disabled = false;
+    btnGoogle.classList.remove("isSignedIn");
+    btnGoogle.title = "Sign in with Google";
+    btnGoogle.innerHTML = `<span class="dot"></span> Sign in`;
+
+    btnLogout.style.display = "none";
+    return;
+  }
+
+  const name = getDisplayName(user);
+  btnGoogle.style.display = "";
+  btnGoogle.disabled = true;
+  btnGoogle.classList.add("isSignedIn");
+  btnGoogle.title = name;
+  btnGoogle.innerHTML = `<span class="dot"></span> ${escapeHtml(name)}`;
+
+  btnLogout.style.display = "";
+  btnLogout.disabled = false;
+  btnLogout.innerHTML = `<span class="dot"></span> Logout`;
+}
+
+  // Keep the auth buttons correct even when Supabase restores the session asynchronously
+  supabase.auth.onAuthStateChange((_event, session) => {
+    refreshAuthUI(session?.user || null);
+  });
+
+  await refreshAuthUI();
 
    const cloudData = await loadFromSupabase();
 if (cloudData) {
