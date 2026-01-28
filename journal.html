@@ -36,7 +36,8 @@
       margin:0;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       color:var(--text);
-      background:
+            text-decoration:none;
+background:
         radial-gradient(1200px 800px at 50% 10%, rgba(122,70,52,.22), transparent 60%),
         radial-gradient(900px 600px at 20% 40%, rgba(90,50,38,.20), transparent 62%),
         radial-gradient(900px 600px at 80% 50%, rgba(90,50,38,.18), transparent 64%),
@@ -454,77 +455,99 @@
       font-size: 13px;
     }
       
-    /* Auth buttons (match pill UI) */
-    #btnGoogle, #btnLogout{
-      position: fixed;
-      top: 14px;
-      left: 14px;
-      z-index: 80;
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.25);
-      color:var(--text);
-      padding: 10px 12px;
-      border-radius: 999px;
-      cursor:pointer;
-      box-shadow: var(--shadow2);
-      display:flex;
-      gap:8px;
-      align-items:center;
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
-      font-weight: 900;
-    }
-    #btnGoogle:hover, #btnLogout:hover{
-      transform: translateY(-1px);
-      background: rgba(0,0,0,.35);
-      border-color: rgba(255,255,255,.18);
-    }
-    #btnGoogle::before, #btnLogout::before{
-      content:"";
-      width:10px;
-      height:10px;
-      border-radius:999px;
-      background: var(--choc);
-      box-shadow: 0 0 0 6px rgba(90,50,38,.15);
-      display:inline-block;
-      flex: 0 0 auto;
-    }
-    #btnLogout::before{
-      background: rgba(255,107,107,.90);
-      box-shadow: 0 0 0 6px rgba(255,107,107,.12);
+        /* Ensure pill links have no underline (including anchors) */
+    a.pillBtn, a.pillBtn:visited, a.pillBtn:hover, a.pillBtn:active{
+      text-decoration:none !important;
+      color: var(--text);
     }
 
-      /* Layout fix: prevent header pill overlap with title */
+    /* Header layout: auth on LEFT, nav on RIGHT, title centered, no overlap */
     header{
+      text-align:center;
+      margin-bottom: 26px;
+      position:relative;
+
       display:grid;
-      grid-template-columns: 1fr auto 1fr;
-      grid-template-rows: auto auto;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto auto;
       column-gap:12px;
       align-items:start;
     }
-    header h1{
-      grid-column:2;
+    header .authTools{
+      grid-column:1;
       grid-row:1;
-      justify-self:center;
+      justify-self:start;
+      align-self:start;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-start;
+      flex-wrap:wrap;
     }
-    header .sub{
-      grid-column:2;
+    header h1{
+      grid-column:1 / -1;
       grid-row:2;
       justify-self:center;
+      text-align:center;
+    }
+    header .sub{
+      grid-column:1 / -1;
+      grid-row:3;
+      justify-self:center;
+      text-align:center;
     }
     header .topTools{
       position:static;
-      grid-column:3;
+      right:auto;
+      top:auto;
+
+      grid-column:2;
       grid-row:1;
       justify-self:end;
       align-self:start;
+
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap:wrap;
       margin:0;
     }
+
+    /* Auth pills: one dot + label */
+    #btnGoogle, #btnLogout{
+      font-weight: 900;
+    }
+    #btnGoogle.signedLabel{
+      cursor: default;
+    }
+    #btnGoogle.signedLabel:hover{
+      transform:none;
+      background: rgba(0,0,0,.25);
+      border-color: var(--stroke);
+    }
+
     @media (max-width: 900px){
       header{
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto;
+        grid-template-rows: auto auto auto auto;
       }
-      header h1, header .sub{
+      header h1{ grid-row:1; }
+      header .sub{ grid-row:2; }
+      header .authTools{
+        grid-row:3;
+        justify-self:center;
+        margin-top:16px;
+        justify-content:center;
+      }
+      header .topTools{
+        grid-row:4;
+        justify-self:center;
+        margin-top:10px;
+        justify-content:center;
+      }
+    }
+header h1, header .sub{
         grid-column:1;
         justify-self:center;
       }
@@ -628,16 +651,19 @@
 </head>
 
 <body>
-  <div class="authTools" aria-label="Account">
+
+<div class="stars"></div>
+
+  <div class="wrap">
+    <header>
+        <div class="authTools" aria-label="Account">
     <button class="pillBtn authBtn" id="btnGoogle" type="button" title="Sign in with Google"><span class="dot"></span> Sign in</button>
     <button class="pillBtn authBtn" id="btnLogout" type="button" title="Sign out" style="display:none;"><span class="dot"></span> Logout</button>
   </div>
 
-  <div class="stars"></div>
+  
 
-  <div class="wrap">
-    <header>
-      <h1>Pacia’s Journal</h1>
+<h1>Pacia’s Journal</h1>
       <p class="sub">Write it down, then connect how you feel to sleep, water, and calories.</p>
 
       <div class="topTools">
@@ -1154,29 +1180,55 @@ init();
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
   const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "Psb_publishable_NF8Pf9JLOq217bUCTOdonA_VpUkRPHe";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   let __cloudCache = null;
 
+
+  // If we returned from OAuth, exchange the code for a session on THIS page.
+  try{
+    const u = new URL(window.location.href);
+    if (u.searchParams.get('code')){
+      await supabase.auth.exchangeCodeForSession(window.location.href);
+      history.replaceState({}, document.title, u.origin + u.pathname);
+    }
+  }catch(e){
+    console.warn('OAuth exchange failed:', e);
+  }
   const btnGoogle = document.getElementById("btnGoogle");
   const btnLogout = document.getElementById("btnLogout");
 
   btnGoogle.addEventListener("click", async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}${window.location.pathname.replace(/\/[^\/]*$/, "")}/auth-callback.html`
-      }
-    });
+    if (btnGoogle.classList.contains("signedLabel") || btnGoogle.disabled) return;
+    try{
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}${window.location.pathname}`
+        }
+      });
+    }catch(e){
+      if (window.toast) window.toast(`Sign-in failed: ${e?.message || e}`);
+      console.warn(e);
+    }
   });
+
+});
 
   btnLogout.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    location.reload();
+    try{
+      await supabase.auth.signOut();
+    }finally{
+      __cloudCache = null;
+      supabase.auth.onAuthStateChange(() => { refreshAuthUI(); });
+
+  refreshAuthUI();
+      if (window.toast) window.toast("Signed out");
+    }
   });
 
-  async function loadFromSupabase() {
+async function loadFromSupabase() {
     const { data: auth } = await supabase.auth.getUser();
     if (!auth?.user) return null;
 
@@ -1219,6 +1271,37 @@ init();
   async function refreshAuthUI() {
     const { data } = await supabase.auth.getUser();
     const user = data?.user;
+
+    const escapeHtml = (s)=>String(s??"").replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    if (!user) {
+      btnGoogle.style.display = "";
+      btnGoogle.disabled = false;
+      btnGoogle.classList.remove("signedLabel");
+      btnGoogle.innerHTML = `<span class="dot"></span> Sign in`;
+      btnGoogle.title = "Sign in with Google";
+
+      btnLogout.style.display = "none";
+      return;
+    }
+
+    const displayName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email ||
+      "Signed in";
+
+    btnGoogle.style.display = "";
+    btnGoogle.disabled = true;
+    btnGoogle.classList.add("signedLabel");
+    btnGoogle.innerHTML = `<span class="dot"></span> ${escapeHtml(displayName)}`;
+    btnGoogle.title = `Signed in as ${displayName}`;
+
+    btnLogout.style.display = "";
+  }
+
+= await supabase.auth.getUser();
+    const user = data?.user;
     if (!user) {
       btnGoogle.style.display = "";
       btnLogout.style.display = "none";
@@ -1252,6 +1335,8 @@ init();
     // If this is the first load after signing in, a reload keeps everything consistent.
     // (safe because journal autosaves)
   }
+
+  supabase.auth.onAuthStateChange(() => { refreshAuthUI(); });
 
   refreshAuthUI();
 </script>
