@@ -1137,8 +1137,10 @@ $("#btnSave").addEventListener("click", saveRecipe);
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 
-  /* ----------------------------
+    /* ----------------------------
      Auth pills (matches dashboard behavior)
+     - Works even if this page’s SUPABASE_URL/KEY are temporarily wrong by
+       falling back to any existing Supabase session stored in localStorage.
   ---------------------------- */
   const btnAuth = document.getElementById("btnAuth");
   const btnLogout = document.getElementById("btnLogout");
@@ -1149,9 +1151,47 @@ $("#btnSave").addEventListener("click", saveRecipe);
     return (md.full_name || md.name || user?.email || "Signed in");
   }
 
+  function safeJsonParse(str){
+    try { return JSON.parse(str); } catch { return null; }
+  }
+
+  function extractUserFromStoredToken(obj){
+    if(!obj) return null;
+    // supabase-js v2 commonly stores { user: {...} } at top-level
+    if(obj.user) return obj.user;
+    // other possible shapes
+    if(obj.currentSession?.user) return obj.currentSession.user;
+    if(obj.data?.session?.user) return obj.data.session.user;
+    return null;
+  }
+
+  function readAnySupabaseStoredUser(){
+    // Look for any project token: sb-<projectRef>-auth-token
+    for(let i=0;i<localStorage.length;i++){
+      const k = localStorage.key(i);
+      if(!k) continue;
+      if(k.startsWith("sb-") && k.endsWith("-auth-token")){
+        const obj = safeJsonParse(localStorage.getItem(k) || "");
+        const user = extractUserFromStoredToken(obj);
+        if(user) return user;
+      }
+    }
+    return null;
+  }
+
   async function refreshAuthUI(){
-    const { data } = await supabase.auth.getSession();
-    const user = data?.session?.user;
+    let user = null;
+
+    // Preferred: use the configured client
+    try{
+      const { data } = await supabase.auth.getSession();
+      user = data?.session?.user || null;
+    }catch(e){ user = null; }
+
+    // Fallback: detect any existing stored session (shared across pages on same origin)
+    if(!user){
+      user = readAnySupabaseStoredUser();
+    }
 
     if(user){
       btnAuth.disabled = true;
@@ -1167,8 +1207,9 @@ $("#btnSave").addEventListener("click", saveRecipe);
   }
 
   btnAuth?.addEventListener("click", async ()=>{
-    const { data } = await supabase.auth.getSession();
-    if(data?.session?.user) return;
+    // If we already look signed-in, do nothing.
+    const existingUser = readAnySupabaseStoredUser();
+    if(existingUser) return;
 
     if(location.protocol === "file:"){
       alert("Google sign-in won’t work when opening this file directly (file://). Please use your GitHub Pages URL (https).");
@@ -1184,7 +1225,15 @@ $("#btnSave").addEventListener("click", saveRecipe);
   });
 
   btnLogout?.addEventListener("click", async ()=>{
-    await supabase.auth.signOut();
+    try{ await supabase.auth.signOut(); }catch(e){}
+    // Defensive: clear any stored auth token keys so UI updates even if client config differs.
+    for(let i=localStorage.length-1;i>=0;i--){
+      const k = localStorage.key(i);
+      if(k && k.startsWith("sb-") && k.endsWith("-auth-token")){
+        localStorage.removeItem(k);
+      }
+    }
+    await refreshAuthUI();
   });
 
   // If we returned from OAuth with a code, exchange it for a session on this page.
@@ -1201,9 +1250,12 @@ $("#btnSave").addEventListener("click", saveRecipe);
     }
   }catch(e){}
 
-  supabase.auth.onAuthStateChange(async ()=>{
-    await refreshAuthUI();
-  });
+  // Keep UI in sync with auth changes
+  try{
+    supabase.auth.onAuthStateChange(async ()=>{
+      await refreshAuthUI();
+    });
+  }catch(e){}
 
   await refreshAuthUI();
 
