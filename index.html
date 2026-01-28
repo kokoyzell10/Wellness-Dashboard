@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
 <head>
@@ -549,7 +550,15 @@
     }
     .authBtn{ padding:10px 12px; }
     @media (max-width: 900px){
-      .authTools{ position:static; margin: 12px auto 0; justify-content:center; }
+      /* Keep auth pills pinned at top on mobile, too */
+      .authTools{
+        position: fixed;
+        top: 14px;
+        left: 50%;
+        transform: translateX(-50%);
+        margin: 0;
+        justify-content: center;
+      }
     }
 
     /* Fix: prevent double-dot on auth buttons */
