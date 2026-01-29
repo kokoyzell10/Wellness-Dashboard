@@ -540,19 +540,20 @@
     }
 
     .authTools{
-      position:fixed;
-      left:16px;
-      top:14px;
-      z-index:60;
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    .authBtn{ padding:10px 12px; }
+  position:absolute;
+  top:18px;
+  left:18px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:flex-start;
+  z-index:5;
+}
+.authBtn{ padding:10px 12px; }
     @media (max-width: 900px){
       /* Keep auth pills pinned at top on mobile, too */
       .authTools{
-        position: fixed;
+        position:absolute;
         top: 14px;
         left: 50%;
         transform: translateX(-50%);
@@ -585,14 +586,16 @@
 </head>
 
 <body>
-  <div class="authTools" aria-label="Account">
-    <button class="pillBtn authBtn" id="btnGoogle" type="button" title="Sign in with Google"><span class="dot"></span> Sign in</button>
-    <button class="pillBtn authBtn" id="btnLogout" type="button" title="Sign out" style="display:none;"><span class="dot"></span> Logout</button>
-  </div>
+  
 <div class="stars"></div>
 
   <div class="wrap">
     <header>
+  <div class="authTools" aria-label="Account">
+      <button class="pillBtn authBtn" id="btnGoogle" type="button" title="Sign in with Google"><span class="dot"></span> Sign in</button>
+      <button class="pillBtn authBtn" id="btnLogout" type="button" title="Sign out" style="display:none;"><span class="dot"></span> Logout</button>
+    </div>
+
       <h1>Pacia’s Wellness</h1>
       <p class="sub">A calm space for balance, nourishment, and movement</p>
 
