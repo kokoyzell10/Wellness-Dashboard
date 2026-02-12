@@ -1,9 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pacia – Recipes</title>
+  <title>Pacia - Recipes</title>
+  <link rel="stylesheet" href="pacia-modern.css"/>
 
   <style>
     :root{
@@ -482,7 +483,7 @@
         </div>
 
         <div class="rightTools">
-          <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+          <a class="pillBtn" href="index.html" data-back-link title="Back to dashboard"><span class="dot"></span> Back</a>
         <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
         <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
         <button class="pillBtn" id="btnExport" type="button" title="Export recipes JSON"><span class="dot"></span> Export</button>
@@ -534,7 +535,7 @@
           </div>
 
           <div class="hint">
-            Tip: In “Calories”, enter calories for <b>one unit</b> of the ingredient. Total = Qty × Calories.
+            Tip: In "Calories", enter calories for <b>one unit</b> of the ingredient. Total = Qty x Calories.
           </div>
         </div>
 
@@ -647,7 +648,8 @@
 const KEYS = {
   RECIPES: "paciaRecipes",
   RECIPES_LEGACY: "pacia-recipes",  // legacy from older file
-  MEALS: "paciaMeals"               // used by food log + dashboard
+  MEALS: "paciaMeals",              // used by food log + dashboard
+  FOOD_DB: "paciaFoodDB"            // used by food autocomplete/suggestions
 };
 
 const $ = (sel, el=document) => el.querySelector(sel);
@@ -655,6 +657,18 @@ const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 
 function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
 function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
+function formatDateDisplay(value){
+  const iso = String(value || "").slice(0,10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[2]}-${m[3]}-${m[1]}`;
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${mm}-${dd}-${yyyy}`;
+}
 function uid(){ return (crypto?.randomUUID?.() || ("r_"+Math.random().toString(16).slice(2)+"_"+Date.now())); }
 function n(x){ const v = Number(x); return Number.isFinite(v) ? v : 0; }
 function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
@@ -686,6 +700,39 @@ function readRecipesRaw(){
 
 function writeRecipes(list){
   localStorage.setItem(KEYS.RECIPES, JSON.stringify(list));
+}
+
+function readFoodDB(){
+  const db = safeParse(localStorage.getItem(KEYS.FOOD_DB) || "{}", {});
+  if (!db || typeof db !== "object" || Array.isArray(db)) return {};
+  return db;
+}
+
+function writeFoodDB(db){
+  localStorage.setItem(KEYS.FOOD_DB, JSON.stringify(db));
+}
+
+function applyFoodEntry(db, name, calories){
+  const key = String(name || "").trim().toLowerCase();
+  const kcal = Math.round(n(calories));
+  if (!key || !kcal || kcal <= 0) return;
+  db[key] = kcal;
+}
+
+function syncRecipeIntoFoodDB(recipe){
+  const db = readFoodDB();
+  applyFoodEntry(db, recipe?.name, recipe?.perServing);
+  (recipe?.ingredients || []).forEach((it)=> applyFoodEntry(db, it?.name, it?.cal));
+  writeFoodDB(db);
+}
+
+function syncRecipesIntoFoodDB(list){
+  const db = readFoodDB();
+  (list || []).forEach((recipe)=>{
+    applyFoodEntry(db, recipe?.name, recipe?.perServing);
+    (recipe?.ingredients || []).forEach((it)=> applyFoodEntry(db, it?.name, it?.cal));
+  });
+  writeFoodDB(db);
 }
 
 /* legacy from old file:
@@ -843,6 +890,7 @@ function saveRecipe(){
   }
 
   writeRecipes(list);
+  syncRecipeIntoFoodDB(v.recipe);
   renderRecipeList();
   resetEditor();
 }
@@ -874,8 +922,8 @@ function renderRecipeList(){
   list.forEach(r => {
     const card = document.createElement("div");
     card.className = "recipeCard";
-    const created = (r.createdAt || "").slice(0,10);
-    const updated = (r.updatedAt || "").slice(0,10);
+    const created = formatDateDisplay((r.createdAt || "").slice(0,10));
+    const updated = formatDateDisplay((r.updatedAt || "").slice(0,10));
 
     card.innerHTML = `
       <div class="recipeTop">
@@ -1102,7 +1150,9 @@ $("#importFile").addEventListener("change", async ()=>{
     const current = readRecipesRaw();
     const map = new Map(current.map(r => [String(r.id), r]));
     normalized.forEach(r => map.set(String(r.id), r));
-    writeRecipes(Array.from(map.values()));
+    const mergedRecipes = Array.from(map.values());
+    writeRecipes(mergedRecipes);
+    syncRecipesIntoFoodDB(mergedRecipes);
 
     renderRecipeList();
     toast("Imported ✅");
@@ -1116,6 +1166,10 @@ $("#importFile").addEventListener("change", async ()=>{
 /* ----------------------------
    Init
 ---------------------------- */
+window.addEventListener("pacia:cloud-applied", ()=>{
+  renderRecipeList();
+});
+
 $("#btnAddIngredient").addEventListener("click", ()=> addIngredientRow("", 1, 0));
 $("#btnReset").addEventListener("click", resetEditor);
 $("#btnSave").addEventListener("click", saveRecipe);
@@ -1130,252 +1184,23 @@ $("#btnSave").addEventListener("click", saveRecipe);
 </script>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { initPaciaApp } from "./pacia-core.js";
 
-  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
-    /* ----------------------------
-     Auth pills (matches dashboard behavior)
-     - Works even if this page’s SUPABASE_URL/KEY are temporarily wrong by
-       falling back to any existing Supabase session stored in localStorage.
-  ---------------------------- */
-  const btnAuth = document.getElementById("btnAuth");
-  const btnLogout = document.getElementById("btnLogout");
-  const authText = document.getElementById("authText");
-
-  function displayName(user){
-    const md = user?.user_metadata || {};
-    return (md.full_name || md.name || user?.email || "Signed in");
-  }
-
-  function safeJsonParse(str){
-    try { return JSON.parse(str); } catch { return null; }
-  }
-
-  function extractUserFromStoredToken(obj){
-    if(!obj) return null;
-    // supabase-js v2 commonly stores { user: {...} } at top-level
-    if(obj.user) return obj.user;
-    // other possible shapes
-    if(obj.currentSession?.user) return obj.currentSession.user;
-    if(obj.data?.session?.user) return obj.data.session.user;
-    return null;
-  }
-
-  function readAnySupabaseStoredUser(){
-    // Look for any project token: sb-<projectRef>-auth-token
-    for(let i=0;i<localStorage.length;i++){
-      const k = localStorage.key(i);
-      if(!k) continue;
-      if(k.startsWith("sb-") && k.endsWith("-auth-token")){
-        const obj = safeJsonParse(localStorage.getItem(k) || "");
-        const user = extractUserFromStoredToken(obj);
-        if(user) return user;
-      }
+  initPaciaApp({
+    signInButton: "#btnAuth",
+    signOutButton: "#btnLogout",
+    signInLabel: "#authText",
+    signedOutText: "Sign in",
+    signOutText: "Logout",
+    toast: (msg) => {
+      if (typeof toast === "function") toast(msg);
+      else alert(msg);
     }
-    return null;
-  }
-
-  async function refreshAuthUI(){
-    let user = null;
-
-    // Preferred: use the configured client
-    try{
-      const { data } = await supabase.auth.getSession();
-      user = data?.session?.user || null;
-    }catch(e){ user = null; }
-
-    // Fallback: detect any existing stored session (shared across pages on same origin)
-    if(!user){
-      user = readAnySupabaseStoredUser();
-    }
-
-    if(user){
-      btnAuth.disabled = true;
-      btnAuth.setAttribute("aria-disabled","true");
-      authText.textContent = displayName(user);
-      btnLogout.style.display = "";
-    } else {
-      btnAuth.disabled = false;
-      btnAuth.removeAttribute("aria-disabled");
-      authText.textContent = "Sign in";
-      btnLogout.style.display = "none";
-    }
-  }
-
-  btnAuth?.addEventListener("click", async ()=>{
-    // If we already look signed-in, do nothing.
-    const existingUser = readAnySupabaseStoredUser();
-    if(existingUser) return;
-
-    if(location.protocol === "file:"){
-      alert("Google sign-in won’t work when opening this file directly (file://). Please use your GitHub Pages URL (https).");
-      return;
-    }
-
-    const redirectTo = `${location.origin}${location.pathname}`;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo }
-    });
-    if(error) alert(error.message);
   });
-
-  btnLogout?.addEventListener("click", async ()=>{
-    try{ await supabase.auth.signOut(); }catch(e){}
-    // Defensive: clear any stored auth token keys so UI updates even if client config differs.
-    for(let i=localStorage.length-1;i>=0;i--){
-      const k = localStorage.key(i);
-      if(k && k.startsWith("sb-") && k.endsWith("-auth-token")){
-        localStorage.removeItem(k);
-      }
-    }
-    await refreshAuthUI();
-  });
-
-  // If we returned from OAuth with a code, exchange it for a session on this page.
-  try{
-    const u = new URL(location.href);
-    const code = u.searchParams.get("code");
-    if(code){
-      await supabase.auth.exchangeCodeForSession(code);
-      u.searchParams.delete("code");
-      u.searchParams.delete("state");
-      u.searchParams.delete("error");
-      u.searchParams.delete("error_description");
-      history.replaceState({}, document.title, u.toString());
-    }
-  }catch(e){}
-
-  // Keep UI in sync with auth changes
-  try{
-    supabase.auth.onAuthStateChange(async ()=>{
-      await refreshAuthUI();
-    });
-  }catch(e){}
-
-  await refreshAuthUI();
-
-  let __cloudCache = null;
-  let __saving = false;
-  let __saveTimer = null;
-
-  const LS_KEYS = {
-    meals: "paciaMeals",
-    workoutDays: "paciaWorkoutDays",
-    waterLogs: "paciaWaterLogs",
-    recipes: "paciaRecipes",
-    workoutSessions: "paciaWorkoutSessions",
-    exerciseLibrary: "paciaExerciseLibrary",
-    journalPages: "paciaJournalPages",
-    sleepLogs: "paciaSleepLogs"
-  };
-
-  const syncLsKeys = new Set(Object.values(LS_KEYS));
-
-  function safeParse(str, fallback){
-    try { return JSON.parse(str); } catch(e){ return fallback; }
-  }
-
-  function readLS(key){
-    const raw = localStorage.getItem(key);
-    if (raw == null) return undefined;
-    const val = safeParse(raw, undefined);
-    return val;
-  }
-
-  function buildPayloadFromLocal(){
-    const payload = {};
-    for (const [cloudKey, lsKey] of Object.entries(LS_KEYS)){
-      const val = readLS(lsKey);
-      if (val !== undefined) payload[cloudKey] = val;
-    }
-    return payload;
-  }
-
-  async function loadFromSupabase(){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  async function saveMerged(partial){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return;
-
-    if (__saving) return;
-    __saving = true;
-    try{
-      let base = __cloudCache;
-      if (!base){
-        const { data } = await supabase
-          .from("wellness_state")
-          .select("data")
-          .eq("user_id", auth.user.id)
-          .single();
-        base = data?.data || {};
-      }
-
-      const merged = { ...(base||{}), ...(partial||{}) };
-      __cloudCache = merged;
-
-      await supabase
-        .from("wellness_state")
-        .upsert({
-          user_id: auth.user.id,
-          data: merged,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-    } finally {
-      __saving = false;
-    }
-  }
-
-  // Cloud -> Local on load
-  const cloud = await loadFromSupabase();
-  if (cloud){
-    __cloudCache = cloud;
-    const map = [
-      ["meals","paciaMeals"],
-      ["workoutDays","paciaWorkoutDays"],
-      ["waterLogs","paciaWaterLogs"],
-      ["recipes","paciaRecipes"],
-      ["workoutSessions","paciaWorkoutSessions"],
-      ["exerciseLibrary","paciaExerciseLibrary"],
-      ["journalPages","paciaJournalPages"],
-      ["sleepLogs","paciaSleepLogs"]
-    ];
-    for (const [k, ls] of map){
-      if (cloud[k] !== undefined){
-        try { localStorage.setItem(ls, JSON.stringify(cloud[k])); } catch(e){}
-      }
-    }
-  }
-
-  // Debounced local -> cloud sync (captures changes without modifying your page logic)
-  const origSetItem = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(k, v){
-    origSetItem(k, v);
-    if (!syncLsKeys.has(k)) return;
-
-    clearTimeout(__saveTimer);
-    __saveTimer = setTimeout(()=>{
-      const payload = buildPayloadFromLocal();
-      saveMerged(payload);
-    }, 700);
-  };
 </script>
+
 
 </body>
 </html>
+
+

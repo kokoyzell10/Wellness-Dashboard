@@ -1,9 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pacia’s Wellness</title>
+  <title>Pacia's Wellness</title>
+  <link rel="stylesheet" href="pacia-modern.css"/>
   <style>
     :root{
       /* Chocolate theme (deep + readable) */
@@ -879,6 +880,19 @@ function todayISO(){
   return d.toISOString().slice(0,10);
 }
 
+function formatDateDisplay(value){
+  const iso = String(value || "").slice(0,10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[2]}-${m[3]}-${m[1]}`;
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${mm}-${dd}-${yyyy}`;
+}
+
 function safeParseJSON(str){
   try { return JSON.parse(str); } catch { return null; }
 }
@@ -1254,7 +1268,7 @@ function renderAll(){
     celebrateOnce(`wat-${currentView}-${days[0].getMonth()}-${days[0].getDate()}`, "Water goal hit! 💧✨");
   }
   if((currentView === "week" || currentView === "month") && movGoal > 0 && movCount >= movGoal){
-    celebrateOnce(`mov-${currentView}-${days[0].getMonth()}-${days[0].getDate()}`, "Movement goal hit! 💪🏾✨");
+    celebrateOnce(`mov-${currentView}-${days[0].getMonth()}-${days[0].getDate()}`, "Movement goal hit! Great work.");
   }
 
   // Week/month section content (always visible, but adapts)
@@ -1389,7 +1403,7 @@ function syncWorkoutModal(){
     b.style.borderRadius = "999px";
     b.style.background = "rgba(90,50,38,.22)";
     b.style.borderColor = "rgba(255,255,255,.14)";
-    b.textContent = iso;
+    b.textContent = formatDateDisplay(iso);
     wrap.appendChild(b);
   });
 }
@@ -1438,7 +1452,7 @@ function syncHistoryModal(){
       div.style.padding = "12px";
       div.innerHTML = `
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
-          <div style="font-weight:950">${m.mealType} <span style="color:rgba(246,241,238,.55);font-weight:800">• ${m.date}</span></div>
+          <div style="font-weight:950">${m.mealType} <span style="color:rgba(246,241,238,.55);font-weight:800">• ${formatDateDisplay(m.date)}</span></div>
           <div style="font-weight:950;color:rgba(246,241,238,.9)">${m.totalKcal} kcal</div>
         </div>
         ${m.notes ? `<div style="margin-top:8px;color:rgba(246,241,238,.65);font-weight:800;font-size:13px">Notes: ${escapeHtml(String(m.notes)).slice(0,120)}</div>` : ""}
@@ -1460,7 +1474,7 @@ function syncHistoryModal(){
       s.className = "chip";
       s.style.background = "rgba(90,50,38,.22)";
       s.style.borderColor = "rgba(255,255,255,.14)";
-      s.textContent = iso;
+      s.textContent = formatDateDisplay(iso);
       w.appendChild(s);
     });
   }
@@ -1482,7 +1496,7 @@ function syncHistoryModal(){
       div.style.display = "flex";
       div.style.justifyContent = "space-between";
       div.style.fontWeight = "950";
-      div.innerHTML = `<span>${l.date}</span><span>${Math.round(l.oz*10)/10} oz</span>`;
+      div.innerHTML = `<span>${formatDateDisplay(l.date)}</span><span>${Math.round(l.oz*10)/10} oz</span>`;
       wl.appendChild(div);
     });
   }
@@ -1518,194 +1532,26 @@ document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) renderA
 })();
 </script>
  <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { initPaciaApp } from "./pacia-core.js";
 
-const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  let __cloudCache = null;
-
-  const btnGoogle = document.getElementById("btnGoogle");
-  const btnLogout = document.getElementById("btnLogout");
-
-  const safeToast = (msg) => {
-    try{
-      if (typeof window.showToast === "function") window.showToast(msg);
-      else if (typeof showToast === "function") showToast(msg);
+  initPaciaApp({
+    signInButton: "#btnGoogle",
+    signOutButton: "#btnLogout",
+    signedInClass: "isSignedIn",
+    signedOutText: "Sign in",
+    signOutText: "Logout",
+    toast: (msg) => {
+      if (typeof showToast === "function") showToast(msg);
       else alert(msg);
-    } catch(e){
-      try { alert(msg); } catch {}
-    }
-  };
-
-  async function handleAuthRedirect(){
-    // If Supabase redirected back with an OAuth code, exchange it for a session
-    try{
-      const url = new URL(window.location.href);
-      const code = url.searchParams.get("code");
-      if (!code) return;
-
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      // Clean URL (remove code + state params) so refresh doesn't re-run the exchange
-      url.searchParams.delete("code");
-      url.searchParams.delete("state");
-      url.searchParams.delete("error");
-      url.searchParams.delete("error_description");
-      window.history.replaceState({}, document.title, url.toString());
-
-      if (error) safeToast(`Sign-in failed: ${error.message}`);
-      else safeToast("Signed in ✅");
-    } catch (e){
-      safeToast("Sign-in callback error. Try again.");
-      console.warn(e);
-    }
-  }
-
-  await handleAuthRedirect();
-
-
-  btnGoogle.addEventListener("click", async () => {
-    try{
-      // OAuth requires https (GitHub Pages). file:// will silently fail.
-      if (window.location.protocol === "file:"){
-        safeToast("Sign-in only works on GitHub Pages (https), not when opening the file locally.");
-        return;
-      }
-      if (btnGoogle.disabled) return;
-
-      // Redirect back to this same page, then handleAuthRedirect() (above) exchanges the code for a session.
-      const redirectTo = window.location.href.split("#")[0];
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo }
-      });
-
-      if (error) safeToast(`Sign-in error: ${error.message}`);
-    } catch (e){
-      safeToast("Sign-in failed. Check Supabase Auth redirect URLs.");
-      console.warn(e);
+    },
+    onCloudApplied: () => {
+      if (typeof renderAll === "function") renderAll();
     }
   });
-
-  btnLogout.addEventListener("click", async () => {
-    await supabase.auth.signOut();
-    location.reload();
-  });
-
-
-async function loadFromSupabase() {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth?.user) return null;
-
-  const { data, error } = await supabase
-    .from("wellness_state")
-    .select("data")
-    .eq("user_id", auth.user.id)
-    .single();
-
-  if (error || !data) return null;
-  return data.data;
-}
-
-
-window.saveToSupabase = async function(payload) {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth?.user) return;
-
-  // Merge with last known cloud snapshot so we don't wipe keys from other pages (journal, recipes, etc.)
-  let base = __cloudCache;
-  if (!base){
-    const { data } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-    base = data?.data || {};
-  }
-
-  const merged = { ...(base || {}), ...(payload || {}) };
-  __cloudCache = merged;
-
-  await supabase
-    .from("wellness_state")
-    .upsert({
-      user_id: auth.user.id,
-      data: merged,
-      updated_at: new Date().toISOString()
-    }, { onConflict: "user_id" });
-};
-
-  async function refreshAuthUI(sessionUser=null) {
-  // Prefer session if provided, otherwise query Supabase
-  let user = sessionUser;
-  if (!user){
-    const { data: s } = await supabase.auth.getSession();
-    user = s?.session?.user || null;
-  }
-
-  const getDisplayName = (u) => {
-    const meta = u?.user_metadata || {};
-    return (meta.full_name || meta.name || u?.email || "Signed in").toString();
-  };
-
-  if (!user) {
-    btnGoogle.style.display = "";
-    btnGoogle.disabled = false;
-    btnGoogle.classList.remove("isSignedIn");
-    btnGoogle.title = "Sign in with Google";
-    btnGoogle.innerHTML = `<span class="dot"></span> Sign in`;
-
-    btnLogout.style.display = "none";
-    return;
-  }
-
-  const name = getDisplayName(user);
-  btnGoogle.style.display = "";
-  btnGoogle.disabled = true;
-  btnGoogle.classList.add("isSignedIn");
-  btnGoogle.title = name;
-  btnGoogle.innerHTML = `<span class="dot"></span> ${escapeHtml(name)}`;
-
-  btnLogout.style.display = "";
-  btnLogout.disabled = false;
-  btnLogout.innerHTML = `<span class="dot"></span> Logout`;
-}
-
-  // Keep the auth buttons correct even when Supabase restores the session asynchronously
-  supabase.auth.onAuthStateChange((_event, session) => {
-    refreshAuthUI(session?.user || null);
-  });
-
-  await refreshAuthUI();
-
-   const cloudData = await loadFromSupabase();
-if (cloudData) {
-  __cloudCache = cloudData;
-
-  // Apply cloud → local (so all pages/devices stay consistent)
-  const map = [
-    ["meals","paciaMeals"],
-    ["workoutDays","paciaWorkoutDays"],
-    ["waterLogs","paciaWaterLogs"],
-    ["recipes","paciaRecipes"],
-    ["workoutSessions","paciaWorkoutSessions"],
-    ["exerciseLibrary","paciaExerciseLibrary"],
-    ["journalPages","paciaJournalPages"],
-    ["sleepLogs","paciaSleepLogs"]
-  ];
-  for (const [k, ls] of map){
-    if (cloudData[k] !== undefined){
-      try { localStorage.setItem(ls, JSON.stringify(cloudData[k])); } catch(e){}
-    }
-  }
-
-  renderAll();
-}
-refreshAuthUI();
 </script>
+
 
 </body>
 </html>
+
+

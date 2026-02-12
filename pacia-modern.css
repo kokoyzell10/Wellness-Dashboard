@@ -1,0 +1,190 @@
+:root {
+  --pacia-glow-a: rgba(122, 70, 52, 0.26);
+  --pacia-glow-b: rgba(89, 211, 140, 0.12);
+  --pacia-focus: rgba(122, 70, 52, 0.35);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20vmax;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(40vmax 30vmax at 8% 12%, var(--pacia-glow-a), transparent 65%),
+    radial-gradient(35vmax 25vmax at 92% 10%, var(--pacia-glow-b), transparent 68%),
+    radial-gradient(50vmax 30vmax at 50% 100%, rgba(255, 207, 107, 0.06), transparent 70%);
+  filter: blur(16px) saturate(110%);
+  animation: paciaPulse 10s ease-in-out infinite alternate;
+}
+
+.card,
+.panelInner,
+.ringCard,
+.action,
+.mealCard,
+.recipeCard,
+.logItem,
+.pageRow {
+  position: relative;
+  overflow: hidden;
+}
+
+.card::after,
+.panelInner::after,
+.ringCard::after,
+.action::after,
+.mealCard::after,
+.recipeCard::after,
+.logItem::after,
+.pageRow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.01) 36%,
+    rgba(122, 70, 52, 0.12) 68%,
+    rgba(255, 255, 255, 0.06) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+.card:hover::after,
+.panelInner:hover::after,
+.ringCard:hover::after,
+.action:hover::after,
+.mealCard:hover::after,
+.recipeCard:hover::after,
+.logItem:hover::after,
+.pageRow:hover::after {
+  opacity: 1;
+}
+
+.card,
+.action,
+.mealCard,
+.recipeCard,
+.logItem,
+.pageRow {
+  animation: paciaLiftIn 0.45s ease both;
+}
+
+.pillBtn,
+.btn,
+.tab,
+.mBtn {
+  transition:
+    transform 0.14s ease,
+    border-color 0.14s ease,
+    background 0.14s ease,
+    box-shadow 0.18s ease !important;
+}
+
+.pillBtn:hover,
+.btn:hover,
+.tab:hover,
+.mBtn:hover {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.35);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.jInput:focus,
+.jSelect:focus,
+textarea.journalBody:focus {
+  box-shadow: 0 0 0 2px var(--pacia-focus);
+}
+
+/* Improve native control contrast for dark theme surfaces */
+select,
+.jSelect {
+  color-scheme: dark;
+  background-color: rgba(24, 18, 17, 0.92) !important;
+  color: #f6f1ee !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+select option,
+select optgroup {
+  background-color: #1a1311;
+  color: #f6f1ee;
+}
+
+select option:checked {
+  background-color: #6f4434;
+  color: #ffffff;
+}
+
+input[type="date"],
+input[type="time"] {
+  color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(100%) brightness(125%) contrast(110%);
+  opacity: 1;
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  filter: invert(100%) brightness(138%) contrast(118%);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(122, 70, 52, 0.55);
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@keyframes paciaPulse {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(0, -2%, 0) scale(1.06);
+    opacity: 1;
+  }
+}
+
+@keyframes paciaLiftIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+
+  .card,
+  .action,
+  .mealCard,
+  .recipeCard,
+  .logItem,
+  .pageRow {
+    animation: none;
+  }
+}

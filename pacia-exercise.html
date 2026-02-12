@@ -1,13 +1,14 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pacia – Movement</title>
+  <title>Pacia - Movement</title>
+  <link rel="stylesheet" href="pacia-modern.css"/>
 
   <style>
     :root{
-      /* Match Pacia dashboard “premium” aesthetic */
+      /* Match Pacia dashboard "premium" aesthetic */
       --bg0:#070606;
       --bg1:#0e0b0a;
       --card:#141111cc;
@@ -486,7 +487,7 @@
         </div>
 
         <div class="headerRight">
-          <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+          <a class="pillBtn" href="index.html" data-back-link title="Back to dashboard"><span class="dot"></span> Back</a>
           <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
           <a class="pillBtn" href="pacia-food.html" title="Open food log"><span class="dot"></span> Food Log</a>
           <a class="pillBtn" href="pacia-recipes.html" title="Open recipes"><span class="dot"></span> Recipes</a>
@@ -506,8 +507,8 @@
           <div class="calTop">
             <div class="calTitle" id="calTitle">Month</div>
             <div class="calNav">
-              <button class="btn" id="prevMonth" type="button">←</button>
-              <button class="btn" id="nextMonth" type="button">→</button>
+              <button class="btn" id="prevMonth" type="button"><</button>
+              <button class="btn" id="nextMonth" type="button">></button>
             </div>
           </div>
 
@@ -532,7 +533,7 @@
           </div>
 
 <div class="hint">
-            Click dates to <b>select</b> (brown). Dates already logged are <b>green</b>. You can select past days and hit “Save selected”.
+            Click dates to <b>select</b> (brown). Dates already logged are <b>green</b>. You can select past days and hit "Save selected".
           </div>
 
           <div class="btnRow" style="justify-content:flex-start">
@@ -610,7 +611,7 @@
           </div>
 
           <div class="hint">
-            “Add to selected dates” attaches the chosen exercise to any selected calendar days (stored in <span class="chip">paciaWorkoutSessions</span>).
+            "Add to selected dates" attaches the chosen exercise to any selected calendar days (stored in <span class="chip">paciaWorkoutSessions</span>).
           </div>
         </div>
 
@@ -670,6 +671,18 @@ const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
 function safeParse(str, fallback){ try{ return JSON.parse(str); } catch { return fallback; } }
 function todayISO(){ const d=new Date(); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }
 function keyISO(d){ const x = new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); }
+function formatDateDisplay(value){
+  const iso = String(value || "").slice(0,10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[2]}-${m[3]}-${m[1]}`;
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${mm}-${dd}-${yyyy}`;
+}
 function n(x){ const v = Number(x); return Number.isFinite(v) ? v : 0; }
 function uniqSorted(arr){ return Array.from(new Set(arr)).sort(); }
 function monthName(d){ return d.toLocaleString(undefined,{month:"long", year:"numeric"}); }
@@ -1134,8 +1147,7 @@ $("#customMuscles").addEventListener("input", ()=>{
    History list
 ---------------------------- */
 function formatDateNice(iso){
-  const d = new Date(iso+"T00:00:00");
-  return d.toLocaleDateString(undefined,{weekday:"short", month:"short", day:"numeric", year:"numeric"});
+  return formatDateDisplay(iso);
 }
 
 function renderLogList(){
@@ -1208,6 +1220,19 @@ $("#btnClearAll").addEventListener("click", ()=>{
   toast("Cleared.");
 });
 
+window.addEventListener("pacia:cloud-applied", ()=>{
+  migrateLegacy();
+  ensureDefaultsInLibrary();
+  renderExerciseSelect();
+  workouts = readWorkoutDays();
+  selected.clear();
+  renderCalendar();
+  updateStats();
+  renderLogList();
+  setActiveMuscles([]);
+  setPickerFromMuscles([]);
+});
+
 /* ----------------------------
    Init
 ---------------------------- */
@@ -1230,183 +1255,24 @@ $("#btnClearAll").addEventListener("click", ()=>{
 </script>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { initPaciaApp } from "./pacia-core.js";
 
-  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-  // --- Auth pills (match dashboard behavior) ---
-  const authPill = document.getElementById("authPill");
-  const logoutPill = document.getElementById("logoutPill");
-
-  function escHtml(str){
-    return String(str ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-  function displayName(user){
-    return (
-      user?.user_metadata?.full_name ||
-      user?.user_metadata?.name ||
-      user?.email ||
-      "Signed in"
-    );
-  }
-  function renderAuth(user){
-    if(!authPill || !logoutPill) return;
-    if(user){
-      authPill.classList.add("disabled");
-      authPill.innerHTML = `<span class="dot"></span> ${escHtml(displayName(user))}`;
-      logoutPill.style.display = "";
-    } else {
-      authPill.classList.remove("disabled");
-      authPill.innerHTML = `<span class="dot"></span> Sign in`;
-      logoutPill.style.display = "none";
+  initPaciaApp({
+    signInButton: "#authPill",
+    signOutButton: "#logoutPill",
+    signedInClass: "disabled",
+    signedOutText: "Sign in",
+    signOutText: "Logout",
+    toast: (msg) => {
+      if (typeof toast === "function") toast(msg);
+      else alert(msg);
     }
-  }
-
-  authPill?.addEventListener("click", async ()=>{
-    // Only sign-in when signed out
-    const { data } = await supabase.auth.getUser();
-    if(data?.user) return;
-
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.href.split("#")[0]
-      }
-    });
   });
-
-  logoutPill?.addEventListener("click", async ()=>{
-    await supabase.auth.signOut();
-  });
-
-  // Initial render + live updates
-  const { data: initUser } = await supabase.auth.getUser();
-  renderAuth(initUser?.user || null);
-  supabase.auth.onAuthStateChange((_event, session)=>{
-    renderAuth(session?.user || null);
-  });
-
-
-  let __cloudCache = null;
-  let __saving = false;
-  let __saveTimer = null;
-
-  const LS_KEYS = {
-    meals: "paciaMeals",
-    workoutDays: "paciaWorkoutDays",
-    waterLogs: "paciaWaterLogs",
-    recipes: "paciaRecipes",
-    workoutSessions: "paciaWorkoutSessions",
-    exerciseLibrary: "paciaExerciseLibrary",
-    journalPages: "paciaJournalPages",
-    sleepLogs: "paciaSleepLogs"
-  };
-
-  const syncLsKeys = new Set(Object.values(LS_KEYS));
-
-  function safeParse(str, fallback){
-    try { return JSON.parse(str); } catch(e){ return fallback; }
-  }
-
-  function readLS(key){
-    const raw = localStorage.getItem(key);
-    if (raw == null) return undefined;
-    const val = safeParse(raw, undefined);
-    return val;
-  }
-
-  function buildPayloadFromLocal(){
-    const payload = {};
-    for (const [cloudKey, lsKey] of Object.entries(LS_KEYS)){
-      const val = readLS(lsKey);
-      if (val !== undefined) payload[cloudKey] = val;
-    }
-    return payload;
-  }
-
-  async function loadFromSupabase(){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  async function saveMerged(partial){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return;
-
-    if (__saving) return;
-    __saving = true;
-    try{
-      let base = __cloudCache;
-      if (!base){
-        const { data } = await supabase
-          .from("wellness_state")
-          .select("data")
-          .eq("user_id", auth.user.id)
-          .single();
-        base = data?.data || {};
-      }
-
-      const merged = { ...(base||{}), ...(partial||{}) };
-      __cloudCache = merged;
-
-      await supabase
-        .from("wellness_state")
-        .upsert({
-          user_id: auth.user.id,
-          data: merged,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-    } finally {
-      __saving = false;
-    }
-  }
-
-  // Cloud -> Local on load
-  const cloud = await loadFromSupabase();
-  if (cloud){
-    __cloudCache = cloud;
-    const map = [
-      ["meals","paciaMeals"],
-      ["workoutDays","paciaWorkoutDays"],
-      ["waterLogs","paciaWaterLogs"],
-      ["recipes","paciaRecipes"],
-      ["workoutSessions","paciaWorkoutSessions"],
-      ["exerciseLibrary","paciaExerciseLibrary"],
-      ["journalPages","paciaJournalPages"],
-      ["sleepLogs","paciaSleepLogs"]
-    ];
-    for (const [k, ls] of map){
-      if (cloud[k] !== undefined){
-        try { localStorage.setItem(ls, JSON.stringify(cloud[k])); } catch(e){}
-      }
-    }
-  }
-
-  // Debounced local -> cloud sync (captures changes without modifying your page logic)
-  const origSetItem = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(k, v){
-    origSetItem(k, v);
-    if (!syncLsKeys.has(k)) return;
-
-    clearTimeout(__saveTimer);
-    __saveTimer = setTimeout(()=>{
-      const payload = buildPayloadFromLocal();
-      saveMerged(payload);
-    }, 700);
-  };
 </script>
+
 
 </body>
 </html>
+
+
 

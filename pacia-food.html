@@ -1,9 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>Pacia - Food Log</title>
+  <link rel="stylesheet" href="pacia-modern.css"/>
   <style>
     :root{
       /* Match Pacia dashboard theme */
@@ -154,10 +155,9 @@
       transition: transform .12s ease, background .12s ease, border-color .12s ease;
       font-weight:900;
       text-decoration:none !important;
-      user-select:
-    .pillBtn:visited{ color:var(--text); text-decoration:none !important; }
-none;
+      user-select:none;
     }
+    .pillBtn:visited{ color:var(--text); text-decoration:none !important; }
     .pillBtn:hover{ transform: translateY(-1px); background: rgba(0,0,0,.35); border-color: rgba(255,255,255,.18); }
     .pillBtn:active{ transform: translateY(0px) scale(.99); }
     .pillBtn .dot{
@@ -619,7 +619,7 @@ none;
           </button>
         </div>
         <div class="rightTools">
-<a class="pillBtn" href="./" title="Back to dashboard">
+<a class="pillBtn" href="index.html" data-back-link title="Back to dashboard">
           <span class="dot"></span> Back
         </a>
         <a class="pillBtn" href="journal.html" title="Open journal"><span class="dot"></span> Journal</a>
@@ -830,6 +830,18 @@ function todayISO(){
   d.setHours(0,0,0,0);
   return d.toISOString().slice(0,10);
 }
+function formatDateDisplay(value){
+  const iso = String(value || "").slice(0,10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[2]}-${m[3]}-${m[1]}`;
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${mm}-${dd}-${yyyy}`;
+}
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -854,8 +866,22 @@ function defaultFoodDB(){
     "salmon": 230
   };
 }
-let foodDB = safeParse(localStorage.getItem(KEYS.FOOD_DB), null) || defaultFoodDB();
-let barcodeDB = safeParse(localStorage.getItem(KEYS.BARCODE_DB), {}) || {};
+function readFoodDBStore(){
+  const parsed = safeParse(localStorage.getItem(KEYS.FOOD_DB), null);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed) || !Object.keys(parsed).length){
+    return defaultFoodDB();
+  }
+  return parsed;
+}
+function readBarcodeDBStore(){
+  const parsed = safeParse(localStorage.getItem(KEYS.BARCODE_DB), {});
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)){
+    return {};
+  }
+  return parsed;
+}
+let foodDB = readFoodDBStore();
+let barcodeDB = readBarcodeDBStore();
 function saveFoodDB(){ localStorage.setItem(KEYS.FOOD_DB, JSON.stringify(foodDB)); }
 function saveBarcodeDB(){ localStorage.setItem(KEYS.BARCODE_DB, JSON.stringify(barcodeDB)); }
 
@@ -1128,7 +1154,7 @@ function renderDayView(){
   const dateISO = selectedDate();
   const isToday = dateISO === todayISO();
 
-  $("#dayTitle").textContent = isToday ? "Today" : dateISO;
+  $("#dayTitle").textContent = isToday ? "Today" : formatDateDisplay(dateISO);
   $("#daySub").textContent = isToday
     ? "Total calories for today’s logged meals."
     : "Total calories for the selected date.";
@@ -1375,6 +1401,14 @@ $("#foodQty").addEventListener("keydown",(e)=>{ if(e.key==="Enter"){ e.preventDe
 
 $("#mealDate").addEventListener("change", renderDayView);
 
+window.addEventListener("pacia:cloud-applied", ()=>{
+  foodDB = readFoodDBStore();
+  barcodeDB = readBarcodeDBStore();
+  currentItems = [];
+  renderCurrentMeal();
+  renderDayView();
+});
+
 // Init
 (function init(){
   $("#mealDate").value = todayISO();
@@ -1385,214 +1419,23 @@ $("#mealDate").addEventListener("change", renderDayView);
 </script>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { initPaciaApp } from "./pacia-core.js";
 
-  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
-  // ---------------------------
-  // Auth UI (shared across pages)
-  // ---------------------------
-  const authBtn = document.getElementById("authBtn");
-  const authText = document.getElementById("authText");
-  const logoutBtn = document.getElementById("logoutBtn");
-
-  function pickUserLabel(user){
-    return (
-      user?.user_metadata?.full_name ||
-      user?.user_metadata?.name ||
-      user?.email ||
-      "Signed in"
-    );
-  }
-
-  function setAuthUI(user){
-    if(!authBtn || !authText || !logoutBtn) return;
-    if(user){
-      authText.textContent = pickUserLabel(user);
-      authBtn.disabled = true;
-      authBtn.style.cursor = "default";
-      authBtn.setAttribute("aria-disabled","true");
-      logoutBtn.style.display = "inline-flex";
-    } else {
-      authText.textContent = "Sign in";
-      authBtn.disabled = false;
-      authBtn.style.cursor = "pointer";
-      authBtn.removeAttribute("aria-disabled");
-      logoutBtn.style.display = "none";
-    }
-  }
-
-  async function finalizeOAuthIfNeeded(){
-    try{
-      const params = new URLSearchParams(window.location.search);
-      if(params.get("code")){
-        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
-        // Clean URL so refresh doesn't re-run code exchange
-        const clean = window.location.origin + window.location.pathname;
-        window.history.replaceState({}, document.title, clean);
-        if(error){
-          window.showToast?.("Sign-in failed.");
-        }
-      }
-    } catch(e){
-      // ignore
-    }
-  }
-
-  authBtn?.addEventListener("click", async ()=>{
-    try{
-      const redirectTo = window.location.origin + window.location.pathname;
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo }
-      });
-      if(error){
-        window.showToast?.(error.message || "Sign-in failed.");
-      }
-    } catch(e){
-      window.showToast?.("Sign-in failed.");
+  initPaciaApp({
+    signInButton: "#authBtn",
+    signOutButton: "#logoutBtn",
+    signInLabel: "#authText",
+    signedOutText: "Sign in",
+    signOutText: "Logout",
+    toast: (msg) => {
+      if (typeof showToast === "function") showToast(msg);
+      else alert(msg);
     }
   });
-
-  logoutBtn?.addEventListener("click", async ()=>{
-    try{
-      const { error } = await supabase.auth.signOut();
-      if(error){
-        window.showToast?.(error.message || "Logout failed.");
-      }
-    } catch(e){
-      window.showToast?.("Logout failed.");
-    }
-  });
-
-  await finalizeOAuthIfNeeded();
-  const { data: __userData } = await supabase.auth.getUser();
-  setAuthUI(__userData?.user || null);
-  supabase.auth.onAuthStateChange((_event, session)=>{
-    setAuthUI(session?.user || null);
-  });
-
-
-  let __cloudCache = null;
-  let __saving = false;
-  let __saveTimer = null;
-
-  const LS_KEYS = {
-    meals: "paciaMeals",
-    workoutDays: "paciaWorkoutDays",
-    waterLogs: "paciaWaterLogs",
-    recipes: "paciaRecipes",
-    workoutSessions: "paciaWorkoutSessions",
-    exerciseLibrary: "paciaExerciseLibrary",
-    journalPages: "paciaJournalPages",
-    sleepLogs: "paciaSleepLogs"
-  };
-
-  const syncLsKeys = new Set(Object.values(LS_KEYS));
-
-  function safeParse(str, fallback){
-    try { return JSON.parse(str); } catch(e){ return fallback; }
-  }
-
-  function readLS(key){
-    const raw = localStorage.getItem(key);
-    if (raw == null) return undefined;
-    const val = safeParse(raw, undefined);
-    return val;
-  }
-
-  function buildPayloadFromLocal(){
-    const payload = {};
-    for (const [cloudKey, lsKey] of Object.entries(LS_KEYS)){
-      const val = readLS(lsKey);
-      if (val !== undefined) payload[cloudKey] = val;
-    }
-    return payload;
-  }
-
-  async function loadFromSupabase(){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  async function saveMerged(partial){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return;
-
-    if (__saving) return;
-    __saving = true;
-    try{
-      let base = __cloudCache;
-      if (!base){
-        const { data } = await supabase
-          .from("wellness_state")
-          .select("data")
-          .eq("user_id", auth.user.id)
-          .single();
-        base = data?.data || {};
-      }
-
-      const merged = { ...(base||{}), ...(partial||{}) };
-      __cloudCache = merged;
-
-      await supabase
-        .from("wellness_state")
-        .upsert({
-          user_id: auth.user.id,
-          data: merged,
-          updated_at: new Date().toISOString()
-        }, { onConflict: "user_id" });
-    } finally {
-      __saving = false;
-    }
-  }
-
-  // Cloud -> Local on load
-  const cloud = await loadFromSupabase();
-  if (cloud){
-    __cloudCache = cloud;
-    const map = [
-      ["meals","paciaMeals"],
-      ["workoutDays","paciaWorkoutDays"],
-      ["waterLogs","paciaWaterLogs"],
-      ["recipes","paciaRecipes"],
-      ["workoutSessions","paciaWorkoutSessions"],
-      ["exerciseLibrary","paciaExerciseLibrary"],
-      ["journalPages","paciaJournalPages"],
-      ["sleepLogs","paciaSleepLogs"]
-    ];
-    for (const [k, ls] of map){
-      if (cloud[k] !== undefined){
-        try { localStorage.setItem(ls, JSON.stringify(cloud[k])); } catch(e){}
-      }
-    }
-  }
-
-  // Debounced local -> cloud sync (captures changes without modifying your page logic)
-  const origSetItem = localStorage.setItem.bind(localStorage);
-  localStorage.setItem = function(k, v){
-    origSetItem(k, v);
-    if (!syncLsKeys.has(k)) return;
-
-    clearTimeout(__saveTimer);
-    __saveTimer = setTimeout(()=>{
-      const payload = buildPayloadFromLocal();
-      saveMerged(payload);
-    }, 700);
-  };
 </script>
+
 
 </body>
 </html>
+
+

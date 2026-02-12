@@ -1,9 +1,10 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Pacia’s Journal</title>
+  <title>Pacia's Journal</title>
+  <link rel="stylesheet" href="pacia-modern.css"/>
   <style>
     :root{
       /* Chocolate theme (deep + readable) */
@@ -620,6 +621,28 @@ background:
       color: var(--text);
       outline:none;
     }
+    /* Journal-specific fallback icons so date/time affordances stay visible */
+    input.jInput[type="date"],
+    input.jInput[type="time"]{
+      padding-right: 44px;
+      background-repeat: no-repeat;
+      background-size: 18px 18px;
+      background-position: right 14px center;
+    }
+    input.jInput[type="date"]{
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6f1ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='17' rx='2.5'/%3E%3Cline x1='8' y1='2.5' x2='8' y2='6'/%3E%3Cline x1='16' y1='2.5' x2='16' y2='6'/%3E%3Cline x1='3' y1='9' x2='21' y2='9'/%3E%3C/svg%3E");
+    }
+    input.jInput[type="time"]{
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f6f1ee' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cline x1='12' y1='7.5' x2='12' y2='12.3'/%3E%3Cline x1='12' y1='12.3' x2='15.2' y2='14.5'/%3E%3C/svg%3E");
+    }
+    input.jInput[type="date"]::-webkit-calendar-picker-indicator,
+    input.jInput[type="time"]::-webkit-calendar-picker-indicator{
+      opacity: 0;
+      width: 44px;
+      height: 100%;
+      margin: 0;
+      cursor: pointer;
+    }
     .statsBar{
       display:flex;
       flex-wrap: wrap;
@@ -664,10 +687,10 @@ background:
   
 
 <h1>Pacia’s Journal</h1>
-      <p class="sub">Write it down, then connect how you feel to sleep, water, and calories.</p>
+      <p class="sub">Write it down, then connect how you feel to sleep, water, calories, and caffeine.</p>
 
       <div class="topTools">
-        <a class="pillBtn" href="./" title="Back to dashboard"><span class="dot"></span> Back</a>
+        <a class="pillBtn" href="index.html" data-back-link title="Back to dashboard"><span class="dot"></span> Back</a>
         <a class="pillBtn" href="pacia-exercise.html" title="Movement"><span class="dot"></span> Movement</a>
         <a class="pillBtn" href="pacia-recipes.html" title="Recipes"><span class="dot"></span> Recipes</a>
         <a class="pillBtn" href="pacia-food.html" title="Food log"><span class="dot"></span> Food Log</a>
@@ -692,7 +715,7 @@ background:
         <div id="pagesList" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
 
         <div class="tiny" style="margin-top:12px;">
-          Tip: make a page for “yesterday” and you’ll still see that day’s calories/water + the sleep you logged for that morning.
+          Tip: make a page for "yesterday" and you'll still see that day's calories/water + the sleep you logged for that morning.
         </div>
       </div>
 
@@ -735,7 +758,7 @@ background:
 
         <div class="card" style="margin-top:14px; padding:14px;">
           <div class="sectionTitle" style="margin-bottom:10px;">Sleep (simple log)</div>
-          <div class="tiny">Log sleep for the morning you woke up (wake date). Later we can add “sleep quality” & trends.</div>
+          <div class="tiny">Log sleep for the morning you woke up (wake date). Later we can add "sleep quality" & trends.</div>
 
           <div class="fieldRow" style="margin-top:10px;">
             <div>
@@ -758,6 +781,40 @@ background:
           </div>
         </div>
 
+        <div class="card" style="margin-top:14px; padding:14px;">
+          <div class="sectionTitle" style="margin-bottom:10px;">Caffeine (optional)</div>
+          <div class="tiny">Track caffeine with time of day so each journal page can show current + previous-day context.</div>
+
+          <div class="fieldRow" style="margin-top:10px;">
+            <div>
+              <div class="tiny">Date</div>
+              <input class="jInput" id="caffeineDate" type="date" />
+            </div>
+            <div>
+              <div class="tiny">Time</div>
+              <input class="jInput" id="caffeineTime" type="time" />
+            </div>
+          </div>
+
+          <div class="fieldRow" style="margin-top:10px;">
+            <div>
+              <div class="tiny">Amount (mg)</div>
+              <input class="jInput" id="caffeineMg" type="number" min="1" step="1" placeholder="e.g. 95" />
+            </div>
+            <div>
+              <div class="tiny">Source (optional)</div>
+              <input class="jInput" id="caffeineSource" placeholder="e.g. Coffee, pre-workout, tea" />
+            </div>
+          </div>
+
+          <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="pillBtn" id="btnSaveCaffeine" type="button"><span class="dot"></span> Save Caffeine</button>
+            <div class="tiny" id="caffeineStatus" style="align-self:center;">—</div>
+          </div>
+
+          <div id="caffeineList" style="margin-top:12px; display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+
       </div>
     </div>
 
@@ -772,7 +829,8 @@ const KEYS = {
   MEALS: "paciaMeals",
   WATER: "paciaWaterLogs",
   JOURNAL: "paciaJournalPages",
-  SLEEP: "paciaSleepLogs"
+  SLEEP: "paciaSleepLogs",
+  CAFFEINE: "paciaCaffeineLogs"
 };
 
 const $ = (sel, el=document) => el.querySelector(sel);
@@ -790,7 +848,41 @@ function safeParse(str, fallback){
   try{ return JSON.parse(str); }catch(e){ return fallback; }
 }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
+function formatDateDisplay(value){
+  const iso = String(value || "").slice(0,10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (m) return `${m[2]}-${m[3]}-${m[1]}`;
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  return `${mm}-${dd}-${yyyy}`;
+}
+function formatDateTimeDisplay(value){
+  if(!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const yyyy = String(d.getFullYear());
+  const h24 = d.getHours();
+  const h12 = ((h24 + 11) % 12) + 1;
+  const mins = String(d.getMinutes()).padStart(2, "0");
+  const ampm = h24 >= 12 ? "PM" : "AM";
+  return `${mm}-${dd}-${yyyy} ${h12}:${mins} ${ampm}`;
+}
+function nowHHMM(){
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+}
 function uid(){ return (crypto?.randomUUID?.() || ("id_"+Math.random().toString(16).slice(2)+Date.now())); }
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
 
 function readMeals(){
   const v = safeParse(localStorage.getItem(KEYS.MEALS) || "[]", []);
@@ -816,6 +908,20 @@ function readSleepLogs(){
 }
 function writeSleepLogs(logs){
   localStorage.setItem(KEYS.SLEEP, JSON.stringify(logs));
+}
+function readCaffeineLogs(){
+  const v = safeParse(localStorage.getItem(KEYS.CAFFEINE) || "[]", []);
+  const arr = Array.isArray(v) ? v : [];
+  return arr.map(x=>({
+    id: String(x?.id || uid()),
+    date: String(x?.date || "").slice(0,10),
+    time: String(x?.time || "").slice(0,5),
+    mg: Number(x?.mg ?? x?.amount ?? 0) || 0,
+    source: String(x?.source || "")
+  })).filter(x=>x.date && x.mg > 0);
+}
+function writeCaffeineLogs(logs){
+  localStorage.setItem(KEYS.CAFFEINE, JSON.stringify(logs));
 }
 function readJournalPages(){
   const v = safeParse(localStorage.getItem(KEYS.JOURNAL) || "[]", []);
@@ -861,6 +967,68 @@ function sleepForWakeDate(date){
   const h = Math.floor(mins/60);
   const m = mins%60;
   return { mins, label: mins? `${h}h ${m}m` : "—" };
+}
+function previousISO(date){
+  const d = new Date((date || todayISO()) + "T00:00:00");
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0,10);
+}
+function parseHHMM(t){
+  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(t||""));
+  if(!m) return null;
+  return { h:Number(m[1]), m:Number(m[2]) };
+}
+function formatTimeLabel(time){
+  const p = parseHHMM(time);
+  if(!p) return "Unknown time";
+  const h12 = ((p.h + 11) % 12) + 1;
+  const ampm = p.h >= 12 ? "PM" : "AM";
+  return `${h12}:${String(p.m).padStart(2,"0")} ${ampm}`;
+}
+function caffeineEntriesForDate(date){
+  return readCaffeineLogs()
+    .filter(x=>x.date===date)
+    .sort((a,b)=> String(a.time||"").localeCompare(String(b.time||"")));
+}
+function caffeineSummaryForDate(date){
+  const entries = caffeineEntriesForDate(date);
+  const total = Math.round(entries.reduce((s,x)=> s + (x.mg || 0), 0));
+  const last = entries.length ? entries[entries.length-1] : null;
+  return {
+    total,
+    count: entries.length,
+    entries,
+    lastTime: last?.time || "",
+    lastTimeLabel: last?.time ? formatTimeLabel(last.time) : "—"
+  };
+}
+
+function renderCaffeineList(date){
+  const host = $("#caffeineList");
+  if(!host) return;
+  const targetDate = String(date || $("#caffeineDate")?.value || todayISO()).slice(0,10);
+  const targetDateLabel = formatDateDisplay(targetDate);
+  const entries = caffeineEntriesForDate(targetDate);
+  const total = Math.round(entries.reduce((s,e)=> s + (e.mg || 0), 0));
+
+  if (!entries.length){
+    host.innerHTML = `<div class="tiny">No caffeine logs for ${targetDateLabel}.</div>`;
+  } else {
+    host.innerHTML = entries.map((e)=>`
+      <div class="pageRow" style="padding:10px 12px;">
+        <div class="pageMeta">
+          <div class="pageTitle">${formatTimeLabel(e.time)} - ${Math.round(e.mg)} mg</div>
+          <div class="pageSub">${e.source ? escapeHtml(e.source) : "No source"} • ${formatDateDisplay(e.date)}</div>
+        </div>
+        <button class="iconBtn" type="button" data-del-caf="${escapeHtml(e.id)}" title="Delete caffeine log">x</button>
+      </div>
+    `).join("");
+  }
+
+  const status = $("#caffeineStatus");
+  if(status){
+    status.textContent = entries.length ? `${entries.length} log(s), ${total} mg total on ${targetDateLabel}` : `No logs for ${targetDateLabel}.`;
+  }
 }
 
 const CATEGORIES = [
@@ -951,7 +1119,7 @@ function renderPages(){
 
     const sub = document.createElement("div");
     sub.className = "pageSub";
-    sub.textContent = `${p.entryDate} • ${p.category}`;
+    sub.textContent = `${formatDateDisplay(p.entryDate)} • ${p.category}`;
 
     meta.appendChild(title);
     meta.appendChild(sub);
@@ -973,6 +1141,8 @@ function renderEditor(){
   const p = getSelected();
   const date = p?.entryDate || todayISO();
   $("#entryDate").value = date;
+  $("#caffeineDate").value = date;
+  if (!$("#caffeineTime").value) $("#caffeineTime").value = nowHHMM();
   $("#entryTitle").value = p?.title || "";
   $("#entryBody").value = p?.content || "";
 
@@ -989,20 +1159,28 @@ function renderEditor(){
     custom.value = cat;
   }
 
-  const created = p?.createdAt ? new Date(p.createdAt).toLocaleString() : "—";
-  const updated = p?.updatedAt ? new Date(p.updatedAt).toLocaleString() : "—";
+  const created = formatDateTimeDisplay(p?.createdAt);
+  const updated = formatDateTimeDisplay(p?.updatedAt);
   $("#stamp").textContent = `Created: ${created}  |  Updated: ${updated}`;
 
+  renderCaffeineList(date);
   renderStats();
 }
 
 function renderStats(){
   const p = getSelected();
   const date = (p?.entryDate || $("#entryDate").value || todayISO()).slice(0,10);
+  const prev = previousISO(date);
 
   const oz = waterForDate(date);
   const kcal = caloriesForDate(date);
   const sleep = sleepForWakeDate(date);
+  const caf = caffeineSummaryForDate(date);
+
+  const prevOz = waterForDate(prev);
+  const prevKcal = caloriesForDate(prev);
+  const prevSleep = sleepForWakeDate(prev);
+  const prevCaf = caffeineSummaryForDate(prev);
 
   const bar = $("#statsBar");
   bar.innerHTML = "";
@@ -1014,14 +1192,20 @@ function renderStats(){
     return d;
   };
 
-  bar.appendChild(chip("Water", oz ? `${oz} oz` : "—"));
-  bar.appendChild(chip("Calories", kcal ? `${kcal} kcal` : "—"));
-  bar.appendChild(chip("Sleep (wake date)", sleep.label));
+  bar.appendChild(chip("Water (Entry Date)", oz ? `${oz} oz` : "—"));
+  bar.appendChild(chip("Calories (Entry Date)", kcal ? `${kcal} kcal` : "—"));
+  bar.appendChild(chip("Caffeine (Entry Date)", caf.total ? `${caf.total} mg` : "—"));
+  bar.appendChild(chip("Last Caffeine Time", caf.count ? caf.lastTimeLabel : "—"));
+  bar.appendChild(chip("Water (Prev Day)", prevOz ? `${prevOz} oz` : "—"));
+  bar.appendChild(chip("Calories (Prev Day)", prevKcal ? `${prevKcal} kcal` : "—"));
+  bar.appendChild(chip("Caffeine (Prev Day)", prevCaf.total ? `${prevCaf.total} mg` : "—"));
+  bar.appendChild(chip("Sleep (Wake Date)", sleep.label));
+  bar.appendChild(chip("Sleep (Prev Wake Date)", prevSleep.label));
 
   const note = document.createElement("div");
   note.className = "tiny";
   note.style.marginTop = "4px";
-  note.textContent = "Tip: log sleep using the morning you woke up. Example: Sunday night sleep = Monday wake date.";
+  note.textContent = `Entry date: ${formatDateDisplay(date)}. Previous-day context is ${formatDateDisplay(prev)}.`;
   bar.appendChild(note);
 }
 
@@ -1090,8 +1274,8 @@ function updateSelectedFromUI(){
   writeJournalPages(pages);
   renderPages();
   renderStats();
-  const created = p?.createdAt ? new Date(p.createdAt).toLocaleString() : "—";
-  const updated = p?.updatedAt ? new Date(p.updatedAt).toLocaleString() : "—";
+  const created = formatDateTimeDisplay(p?.createdAt);
+  const updated = formatDateTimeDisplay(p?.updatedAt);
   $("#stamp").textContent = `Created: ${created}  |  Updated: ${updated}`;
 }
 
@@ -1100,7 +1284,11 @@ function saveJournalToCloudDebounced(){
   dirtyTimer = setTimeout(async ()=>{
     $("#saveStatus").textContent = "Saving to cloud…";
     try{
-      await saveToSupabase({ journalPages: readJournalPages(), sleepLogs: readSleepLogs() });
+      await saveToSupabase({
+        journalPages: readJournalPages(),
+        sleepLogs: readSleepLogs(),
+        caffeineLogs: readCaffeineLogs()
+      });
       $("#saveStatus").textContent = "Saved.";
     }catch(e){
       $("#saveStatus").textContent = "Saved locally (cloud unavailable).";
@@ -1114,7 +1302,12 @@ function hookAutosave(){
     $("#saveStatus").textContent = "Saving…";
     saveJournalToCloudDebounced();
   };
-  $("#entryDate").addEventListener("change", onChange);
+  $("#entryDate").addEventListener("change", ()=>{
+    onChange();
+    const d = ($("#entryDate").value || todayISO()).slice(0,10);
+    $("#caffeineDate").value = d;
+    renderCaffeineList(d);
+  });
   $("#entryTitle").addEventListener("input", onChange);
   $("#entryBody").addEventListener("input", onChange);
 
@@ -1130,6 +1323,16 @@ function hookAutosave(){
 
   $("#btnNewPage").addEventListener("click", addPage);
   $("#btnDeletePage").addEventListener("click", deleteSelected);
+  $("#btnSaveCaffeine").addEventListener("click", saveCaffeine);
+  $("#caffeineDate").addEventListener("change", ()=>{
+    const d = ($("#caffeineDate").value || todayISO()).slice(0,10);
+    renderCaffeineList(d);
+  });
+  $("#caffeineList").addEventListener("click", (e)=>{
+    const btn = e.target.closest("button[data-del-caf]");
+    if(!btn) return;
+    deleteCaffeineLog(btn.getAttribute("data-del-caf"));
+  });
 }
 
 function saveSleep(){
@@ -1150,16 +1353,83 @@ function saveSleep(){
   else logs.push({ date, minutes, quality: null, note: "" });
 
   writeSleepLogs(logs);
-  $("#sleepStatus").textContent = `Saved for ${date} (${Math.floor(minutes/60)}h ${minutes%60}m)`;
+  $("#sleepStatus").textContent = `Saved for ${formatDateDisplay(date)} (${Math.floor(minutes/60)}h ${minutes%60}m)`;
   renderStats();
   toast("Sleep saved");
   saveJournalToCloudDebounced();
 }
 
+function saveCaffeine(){
+  const date = ($("#caffeineDate").value || $("#entryDate").value || todayISO()).slice(0,10);
+  const time = ($("#caffeineTime").value || "").slice(0,5);
+  const mg = Math.round(Number($("#caffeineMg").value || 0) || 0);
+  const source = ($("#caffeineSource").value || "").trim();
+
+  if (!date){
+    $("#caffeineStatus").textContent = "Choose a date.";
+    return;
+  }
+  if (!mg || mg <= 0){
+    $("#caffeineStatus").textContent = "Enter caffeine amount in mg.";
+    return;
+  }
+
+  const logs = readCaffeineLogs();
+  logs.push({
+    id: uid(),
+    date,
+    time,
+    mg,
+    source
+  });
+
+  writeCaffeineLogs(logs);
+  $("#caffeineMg").value = "";
+  $("#caffeineSource").value = "";
+  if (!$("#caffeineTime").value) $("#caffeineTime").value = nowHHMM();
+
+  renderCaffeineList(date);
+  renderStats();
+  toast("Caffeine saved");
+  saveJournalToCloudDebounced();
+}
+
+function deleteCaffeineLog(id){
+  if(!id) return;
+  let logs = readCaffeineLogs();
+  logs = logs.filter(x=>String(x.id)!==String(id));
+  writeCaffeineLogs(logs);
+  const date = ($("#caffeineDate").value || $("#entryDate").value || todayISO()).slice(0,10);
+  renderCaffeineList(date);
+  renderStats();
+  saveJournalToCloudDebounced();
+}
+
+window.addEventListener("pacia:cloud-applied", ()=>{
+  pages = readJournalPages();
+  if (!pages.length){
+    selectedId = null;
+    renderPages();
+    renderEditor();
+    $("#saveStatus").textContent = "Synced.";
+    return;
+  }
+
+  if (!pages.find(p => p.id === selectedId)){
+    selectedId = pages[0].id;
+  }
+
+  renderPages();
+  renderEditor();
+  $("#saveStatus").textContent = "Synced.";
+});
+
 function init(){
   fillCategorySelects();
   $("#entryDate").value = todayISO();
   $("#sleepDate").value = todayISO();
+  $("#caffeineDate").value = todayISO();
+  $("#caffeineTime").value = nowHHMM();
 
   pages = readJournalPages();
   if (!pages.length) {
@@ -1171,162 +1441,30 @@ function init(){
   }
   hookAutosave();
   $("#btnSaveSleep").addEventListener("click", saveSleep);
+  renderCaffeineList($("#entryDate").value || todayISO());
 }
 
 init();
 </script>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { initPaciaApp } from "./pacia-core.js";
 
-  const SUPABASE_URL = "https://qtvyhdjhgroeswtsfldi.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0dnloZGpoZ3JvZXN3dHNmbGRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NDM5MDMsImV4cCI6MjA4NTAxOTkwM30.Z5mf1xMNoNRdJtRBFIbDSgl8J0qk-0J3c3ywGW2WwlE";
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  let __cloudCache = null;
-
-  const btnGoogle = document.getElementById("btnGoogle");
-  const btnLogout = document.getElementById("btnLogout");
-
-  const escapeHtml = (s)=>String(s ?? "").replace(/[&<>"']/g, ch => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
-  }[ch]));
-
-  async function refreshAuthUI(){
-    const { data } = await supabase.auth.getUser();
-    const user = data?.user;
-
-    if (!user){
-      btnGoogle.style.display = "";
-      btnGoogle.disabled = false;
-      btnGoogle.classList.remove("signedLabel");
-      btnGoogle.innerHTML = `<span class="dot"></span> Sign in`;
-      btnGoogle.title = "Sign in with Google";
-
-      btnLogout.style.display = "none";
-      return;
-    }
-
-    const displayName =
-      user.user_metadata?.full_name ||
-      user.user_metadata?.name ||
-      user.email ||
-      "Signed in";
-
-    btnGoogle.style.display = "";
-    btnGoogle.disabled = true;
-    btnGoogle.classList.add("signedLabel");
-    btnGoogle.innerHTML = `<span class="dot"></span> ${escapeHtml(displayName)}`;
-    btnGoogle.title = `Signed in as ${displayName}`;
-
-    btnLogout.style.display = "";
-  }
-
-  // If we returned from OAuth, exchange the code for a session on THIS page.
-  try{
-    const u = new URL(window.location.href);
-    if (u.searchParams.get("code")){
-      await supabase.auth.exchangeCodeForSession(window.location.href);
-      history.replaceState({}, document.title, u.origin + u.pathname);
-    }
-  }catch(e){
-    console.warn("OAuth exchange failed:", e);
-  }
-
-  btnGoogle.addEventListener("click", async () => {
-    if (btnGoogle.classList.contains("signedLabel") || btnGoogle.disabled) return;
-    try{
-      await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: {
-          redirectTo: `${window.location.origin}${window.location.pathname}`
-        }
-      });
-    }catch(e){
-      if (window.toast) window.toast(`Sign-in failed: ${e?.message || e}`);
-      console.warn(e);
+  initPaciaApp({
+    signInButton: "#btnGoogle",
+    signOutButton: "#btnLogout",
+    signedInClass: "signedLabel",
+    signedOutText: "Sign in",
+    signOutText: "Logout",
+    toast: (msg) => {
+      if (typeof toast === "function") toast(msg);
+      else alert(msg);
     }
   });
-
-  btnLogout.addEventListener("click", async () => {
-    try{
-      await supabase.auth.signOut();
-    }finally{
-      __cloudCache = null;
-      await refreshAuthUI();
-      if (window.toast) window.toast("Signed out");
-    }
-  });
-
-  async function loadFromSupabase(){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) return null;
-
-    const { data, error } = await supabase
-      .from("wellness_state")
-      .select("data")
-      .eq("user_id", auth.user.id)
-      .single();
-
-    if (error || !data) return null;
-    return data.data;
-  }
-
-  window.saveToSupabase = async function(payload){
-    const { data: auth } = await supabase.auth.getUser();
-    if (!auth?.user) throw new Error("Not signed in");
-
-    let base = __cloudCache;
-    if (!base){
-      const { data } = await supabase
-        .from("wellness_state")
-        .select("data")
-        .eq("user_id", auth.user.id)
-        .single();
-      base = data?.data || {};
-    }
-
-    const merged = { ...(base||{}), ...(payload||{}) };
-    __cloudCache = merged;
-
-    await supabase
-      .from("wellness_state")
-      .upsert({
-        user_id: auth.user.id,
-        data: merged,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "user_id" });
-  };
-
-  // When signed in, pull cloud state to localStorage (so this page matches dashboard).
-  try{
-    const cloudData = await loadFromSupabase();
-    if (cloudData){
-      __cloudCache = cloudData;
-
-      const map = [
-        ["meals","paciaMeals"],
-        ["workoutDays","paciaWorkoutDays"],
-        ["waterLogs","paciaWaterLogs"],
-        ["recipes","paciaRecipes"],
-        ["workoutSessions","paciaWorkoutSessions"],
-        ["exerciseLibrary","paciaExerciseLibrary"],
-        ["journalPages","paciaJournalPages"],
-        ["sleepLogs","paciaSleepLogs"]
-      ];
-      for (const [k, ls] of map){
-        if (cloudData[k] !== undefined){
-          try { localStorage.setItem(ls, JSON.stringify(cloudData[k])); } catch(e){}
-        }
-      }
-    }
-  }catch(e){
-    console.warn("Cloud load failed:", e);
-  }
-
-  supabase.auth.onAuthStateChange(() => { refreshAuthUI(); });
-  await refreshAuthUI();
 </script>
+
 
 </body>
 </html>
+
+
