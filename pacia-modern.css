@@ -188,3 +188,16 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
     animation: none;
   }
 }
+
+@media (max-width: 900px) {
+  #btnGoogle,
+  #btnAuth,
+  #authBtn,
+  #authPill {
+    min-width: 0;
+    max-width: 72vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
